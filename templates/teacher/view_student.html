@@ -1,0 +1,1230 @@
+{% extends "base.html" %}
+
+{% block title %}{{ student.name }} - Student Profile{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <!-- Student Header -->
+    <div class="student-header">
+        <div class="student-avatar-large">
+            {% if student.photo %}
+            <img src="{{ url_for('static', filename=student.photo) }}" 
+                 alt="{{ student.name }}" 
+                 class="avatar-img">
+            {% else %}
+            <div class="avatar-placeholder">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="student-info">
+            <h1>{{ student.name }}</h1>
+            <p class="student-id">ID: {{ student.id }} • Roll: {{ student.roll_number }}</p>
+            <div class="student-meta">
+                <span class="meta-item">
+                    <i class="fas fa-graduation-cap"></i>
+                    Class {{ student.class_name }}-{{ student.section }}
+                </span>
+                <span class="meta-item">
+                    <i class="fas fa-user"></i>
+                    {{ student.father_name or 'Father: N/A' }}
+                </span>
+                <span class="meta-item">
+                    <i class="fas fa-phone"></i>
+                    {{ student.father_phone }}
+                </span>
+                {% if student.mother_phone %}
+                <span class="meta-item">
+                    <i class="fas fa-phone-alt"></i>
+                    {{ student.mother_phone }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="student-status">
+            {% if student.is_active %}
+            <span class="status-badge active">
+                <i class="fas fa-check-circle"></i> Active
+            </span>
+            {% else %}
+            <span class="status-badge inactive">
+                <i class="fas fa-times-circle"></i> Inactive
+            </span>
+            {% endif %}
+            <p class="joined-date">
+                <i class="far fa-calendar-alt"></i>
+                Joined {{ student.created_at.strftime('%d %b %Y') }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_classes }}</h3>
+                <p>Total Classes</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ present_count }}</h3>
+                <p>Present</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ absent_count }}</h3>
+                <p>Absent</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-percentage"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ "%.1f"|format(attendance_percentage) }}%</h3>
+                <p>Attendance Rate</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-tabs">
+        <div class="tabs-header">
+            <button class="tab-btn active" data-tab="profile">Profile</button>
+            <button class="tab-btn" data-tab="attendance">Attendance</button>
+            <button class="tab-btn" data-tab="subjects">Subject Performance</button>
+            <button class="tab-btn" data-tab="contact">Contact</button>
+        </div>
+
+        <!-- Profile Tab -->
+        <div class="tab-content active" id="profileTab">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-user-circle"></i> Student Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label><i class="fas fa-hashtag"></i> Roll Number</label>
+                            <p>{{ student.roll_number }}</p>
+                        </div>
+                        
+                        <div class="info-item">
+                            <label><i class="fas fa-graduation-cap"></i> Class</label>
+                            <p>Class {{ student.class_name }}-{{ student.section }}</p>
+                        </div>
+                        
+                        {% if student.date_of_birth %}
+                        <div class="info-item">
+                            <label><i class="fas fa-birthday-cake"></i> Date of Birth</label>
+                            <p>{{ student.date_of_birth.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="info-item">
+                            <label><i class="fas fa-calendar-plus"></i> Joined On</label>
+                            <p>{{ student.created_at.strftime('%d %B, %Y') }}</p>
+                        </div>
+                        
+                        <div class="info-item full-width">
+                            <label><i class="fas fa-map-marker-alt"></i> Address</label>
+                            <p>{{ student.address or 'No address provided' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-family"></i> Family Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="family-grid">
+                        <div class="family-member">
+                            <div class="member-icon">
+                                <i class="fas fa-male"></i>
+                            </div>
+                            <div class="member-info">
+                                <h4>Father</h4>
+                                <p class="member-name">{{ student.father_name or 'N/A' }}</p>
+                                <p class="member-phone">
+                                    <i class="fas fa-phone"></i>
+                                    {{ student.father_phone or 'N/A' }}
+                                </p>
+                            </div>
+                        </div>
+                        
+                        {% if student.mother_name or student.mother_phone %}
+                        <div class="family-member">
+                            <div class="member-icon">
+                                <i class="fas fa-female"></i>
+                            </div>
+                            <div class="member-info">
+                                <h4>Mother</h4>
+                                <p class="member-name">{{ student.mother_name or 'N/A' }}</p>
+                                {% if student.mother_phone %}
+                                <p class="member-phone">
+                                    <i class="fas fa-phone"></i>
+                                    {{ student.mother_phone }}
+                                </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Tab -->
+        <div class="tab-content" id="attendanceTab">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-history"></i> Attendance History</h3>
+                    <div class="header-actions">
+                        <button class="btn-sm btn-primary" onclick="exportAttendance()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if attendance_history %}
+                    <div class="attendance-chart">
+                        <canvas id="attendanceChart"></canvas>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Day</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th>Teacher</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attendance in attendance_history %}
+                                <tr>
+                                    <td>{{ attendance.date.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ attendance.day }}</td>
+                                    <td>{{ attendance.subject.name if attendance.subject else 'N/A' }}</td>
+                                    <td>
+                                        {% if attendance.status == 'present' %}
+                                        <span class="status-badge success">
+                                            <i class="fas fa-check"></i> Present
+                                        </span>
+                                        {% elif attendance.status == 'absent' %}
+                                        <span class="status-badge danger">
+                                            <i class="fas fa-times"></i> Absent
+                                        </span>
+                                        {% elif attendance.status == 'late' %}
+                                        <span class="status-badge warning">
+                                            <i class="fas fa-clock"></i> Late
+                                        </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ attendance.teacher.username if attendance.teacher else 'N/A' }}</td>
+                                    <td>{{ attendance.notes or '' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard-list fa-3x"></i>
+                        <h4>No Attendance Records</h4>
+                        <p>Attendance records will appear here</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Subjects Tab -->
+        <div class="tab-content" id="subjectsTab">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-book-open"></i> Subject-wise Performance</h3>
+                </div>
+                <div class="card-body">
+                    {% if subject_stats %}
+                    <div class="subjects-grid">
+                        {% for subject_name, stats in subject_stats.items() %}
+                        <div class="subject-card">
+                            <div class="subject-header">
+                                <h4>{{ subject_name }}</h4>
+                                <span class="subject-attendance">
+                                    {{ "%.0f"|format((stats.present / stats.total * 100) if stats.total > 0 else 0) }}%
+                                </span>
+                            </div>
+                            <div class="subject-body">
+                                <div class="attendance-progress">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: {{ (stats.present / stats.total * 100) if stats.total > 0 else 0 }}%"></div>
+                                    </div>
+                                    <div class="progress-stats">
+                                        <span>{{ stats.present }}/{{ stats.total }}</span>
+                                        <span>Present</span>
+                                    </div>
+                                </div>
+                                <div class="subject-details">
+                                    <div class="detail-item">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Present: {{ stats.present }}</span>
+                                    </div>
+                                    <div class="detail-item">
+                                        <i class="fas fa-times-circle"></i>
+                                        <span>Absent: {{ stats.total - stats.present }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-book fa-3x"></i>
+                        <h4>No Subject Data</h4>
+                        <p>Subject attendance data will appear here</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Tab -->
+        <div class="tab-content" id="contactTab">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-address-book"></i> Contact Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="contact-actions">
+                        <button class="btn-action primary" onclick="sendSMS()">
+                            <i class="fas fa-sms"></i>
+                            <span>Send SMS</span>
+                        </button>
+                        <button class="btn-action success" onclick="callFather()">
+                            <i class="fas fa-phone"></i>
+                            <span>Call Father</span>
+                        </button>
+                        {% if student.mother_phone %}
+                        <button class="btn-action warning" onclick="callMother()">
+                            <i class="fas fa-phone-alt"></i>
+                            <span>Call Mother</span>
+                        </button>
+                        {% endif %}
+                        <button class="btn-action info" onclick="sendEmail()">
+                            <i class="fas fa-envelope"></i>
+                            <span>Send Email</span>
+                        </button>
+                    </div>
+                    
+                    <div class="contact-details">
+                        <div class="detail-section">
+                            <h4><i class="fas fa-male"></i> Father's Information</h4>
+                            <div class="detail-item">
+                                <label>Name:</label>
+                                <span>{{ student.father_name or 'N/A' }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Phone:</label>
+                                <span>{{ student.father_phone or 'N/A' }}</span>
+                            </div>
+                            {% if student.father_phone %}
+                            <div class="detail-item">
+                                <label>WhatsApp:</label>
+                                <span>
+                                    <a href="https://wa.me/{{ student.father_phone|replace('+', '')|replace(' ', '') }}"
+                                       target="_blank" class="whatsapp-link">
+                                        <i class="fab fa-whatsapp"></i> Send WhatsApp
+                                    </a>
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        {% if student.mother_name or student.mother_phone %}
+                        <div class="detail-section">
+                            <h4><i class="fas fa-female"></i> Mother's Information</h4>
+                            {% if student.mother_name %}
+                            <div class="detail-item">
+                                <label>Name:</label>
+                                <span>{{ student.mother_name }}</span>
+                            </div>
+                            {% endif %}
+                            {% if student.mother_phone %}
+                            <div class="detail-item">
+                                <label>Phone:</label>
+                                <span>{{ student.mother_phone }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>WhatsApp:</label>
+                                <span>
+                                    <a href="https://wa.me/{{ student.mother_phone|replace('+', '')|replace(' ', '') }}"
+                                       target="_blank" class="whatsapp-link">
+                                        <i class="fab fa-whatsapp"></i> Send WhatsApp
+                                    </a>
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if student.address %}
+                    <div class="address-section">
+                        <h4><i class="fas fa-map-marker-alt"></i> Home Address</h4>
+                        <div class="address-box">
+                            <i class="fas fa-home"></i>
+                            <p>{{ student.address }}</p>
+                        </div>
+                        <button class="btn-secondary" onclick="showOnMap()">
+                            <i class="fas fa-map"></i> View on Map
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SMS Modal -->
+<div class="modal-overlay" id="smsModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3><i class="fas fa-sms"></i> Send SMS</h3>
+            <button class="modal-close" onclick="closeModal('smsModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="form-group">
+                <label><i class="fas fa-user"></i> Recipient</label>
+                <select id="smsRecipient" class="form-select">
+                    <option value="father">Father ({{ student.father_phone }})</option>
+                    {% if student.mother_phone %}
+                    <option value="mother">Mother ({{ student.mother_phone }})</option>
+                    {% endif %}
+                    <option value="both">Both Parents</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-comment-alt"></i> Message Template</label>
+                <select id="smsTemplate" class="form-select" onchange="updateSMSPreview()">
+                    <option value="">Custom Message</option>
+                    <option value="attendance">Attendance Report</option>
+                    <option value="performance">Performance Update</option>
+                    <option value="meeting">Parent-Teacher Meeting</option>
+                    <option value="payment">Fee Payment Reminder</option>
+                    <option value="general">General Information</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-edit"></i> Message</label>
+                <textarea id="smsMessage" class="form-textarea" rows="4" 
+                          placeholder="Type your message here..."></textarea>
+                <div class="char-counter">
+                    <span id="charCount">0</span>/160 characters
+                </div>
+            </div>
+            
+            <div class="message-preview-box">
+                <div class="preview-header">
+                    <i class="fas fa-sms"></i> Preview
+                </div>
+                <div class="preview-body" id="smsPreview">
+                    Your message preview will appear here...
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeModal('smsModal')">
+                Cancel
+            </button>
+            <button type="button" class="btn-primary" onclick="sendSMSNow()">
+                <i class="fas fa-paper-plane"></i> Send SMS
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.student-header {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    padding: 30px;
+    background: linear-gradient(135deg, rgba(20, 25, 50, 0.8), rgba(10, 14, 39, 0.8));
+    border-radius: 15px;
+    border: 1px solid var(--card-border);
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+}
+
+.student-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 200px;
+    height: 200px;
+    background: linear-gradient(135deg, var(--primary), transparent);
+    border-radius: 50%;
+    transform: translate(50%, -50%);
+    opacity: 0.1;
+}
+
+.student-avatar-large {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 4px solid var(--primary);
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 40px;
+}
+
+.student-info {
+    flex: 1;
+}
+
+.student-info h1 {
+    margin: 0 0 5px 0;
+    color: var(--light);
+    font-size: 32px;
+}
+
+.student-id {
+    color: var(--gray);
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.student-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--light);
+    font-size: 14px;
+}
+
+.meta-item i {
+    color: var(--primary);
+}
+
+.student-status {
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.joined-date {
+    margin-top: 10px;
+    color: var(--gray);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.content-tabs {
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+}
+
+.tabs-header {
+    display: flex;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid var(--card-border);
+    flex-wrap: wrap;
+}
+
+.tab-btn {
+    padding: 15px 25px;
+    background: none;
+    border: none;
+    color: var(--gray);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.tab-btn.active {
+    color: var(--primary);
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--primary);
+}
+
+.tab-content {
+    display: none;
+    padding: 0;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.info-item {
+    margin-bottom: 15px;
+}
+
+.info-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.info-item label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: var(--gray);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-item p {
+    margin: 0;
+    color: var(--light);
+    font-size: 15px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    border: 1px solid var(--card-border);
+}
+
+.family-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.family-member {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+    transition: all 0.3s;
+}
+
+.family-member:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+}
+
+.member-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+}
+
+.member-info h4 {
+    margin: 0 0 5px 0;
+    color: var(--light);
+}
+
+.member-name {
+    margin: 0 0 8px 0;
+    color: var(--light);
+    font-weight: 500;
+}
+
+.member-phone {
+    margin: 0;
+    color: var(--primary);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.attendance-chart {
+    height: 200px;
+    margin-bottom: 30px;
+}
+
+.subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.subject-card {
+    background: rgba(20, 25, 50, 0.5);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 20px;
+    transition: all 0.3s;
+}
+
+.subject-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-3px);
+}
+
+.subject-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.subject-header h4 {
+    margin: 0;
+    color: var(--light);
+    font-size: 16px;
+}
+
+.subject-attendance {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.attendance-progress {
+    margin-bottom: 15px;
+}
+
+.progress-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--gray);
+}
+
+.subject-details {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--gray);
+}
+
+.detail-item i {
+    font-size: 14px;
+}
+
+.contact-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.btn-action {
+    flex: 1;
+    min-width: 150px;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    background: var(--card-bg);
+    color: var(--light);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+}
+
+.btn-action i {
+    font-size: 24px;
+}
+
+.btn-action.primary {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: white;
+}
+
+.btn-action.success {
+    background: linear-gradient(135deg, var(--success), var(--accent));
+    color: white;
+}
+
+.btn-action.warning {
+    background: linear-gradient(135deg, var(--warning), var(--accent));
+    color: white;
+}
+
+.btn-action.info {
+    background: linear-gradient(135deg, var(--info), var(--accent));
+    color: white;
+}
+
+.btn-action:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+}
+
+.contact-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.detail-section {
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+}
+
+.detail-section h4 {
+    margin: 0 0 15px 0;
+    color: var(--light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-item label {
+    color: var(--gray);
+    font-weight: 500;
+}
+
+.detail-item span {
+    color: var(--light);
+}
+
+.whatsapp-link {
+    color: var(--success);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.whatsapp-link:hover {
+    color: var(--accent);
+}
+
+.address-section {
+    padding: 20px;
+    background: rgba(0, 212, 255, 0.05);
+    border-radius: 10px;
+    border: 1px solid var(--card-border);
+}
+
+.address-section h4 {
+    margin: 0 0 15px 0;
+    color: var(--light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.address-box {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+}
+
+.address-box i {
+    color: var(--primary);
+    font-size: 20px;
+    margin-top: 2px;
+}
+
+.address-box p {
+    margin: 0;
+    color: var(--light);
+    line-height: 1.5;
+}
+
+.char-counter {
+    text-align: right;
+    margin-top: 5px;
+    color: var(--gray);
+    font-size: 12px;
+}
+
+.message-preview-box {
+    margin-top: 20px;
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .student-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 20px;
+    }
+    
+    .student-meta {
+        justify-content: center;
+    }
+    
+    .tabs-header {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        justify-content: center;
+    }
+    
+    .contact-actions {
+        flex-direction: column;
+    }
+    
+    .btn-action {
+        min-width: 100%;
+    }
+    
+    .contact-details {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked tab
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab') + 'Tab';
+        document.getElementById(tabId).classList.add('active');
+    });
+});
+
+// Initialize attendance chart
+const attendanceCtx = document.getElementById('attendanceChart')?.getContext('2d');
+if (attendanceCtx) {
+    // Prepare data for last 30 days
+    const last30Days = [];
+    const attendanceData = [];
+    const today = new Date();
+    
+    for (let i = 29; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        last30Days.push(date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }));
+        
+        // Count attendance for this day (this would normally come from API)
+        // For now, using random data for demo
+        attendanceData.push(Math.floor(Math.random() * 2)); // 0 or 1 for demo
+    }
+    
+    new Chart(attendanceCtx, {
+        type: 'line',
+        data: {
+            labels: last30Days,
+            datasets: [{
+                label: 'Attendance',
+                data: attendanceData,
+                borderColor: getComputedStyle(document.documentElement).getPropertyValue('--success'),
+                backgroundColor: 'rgba(0, 204, 102, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 1,
+                    ticks: {
+                        callback: function(value) {
+                            return value === 1 ? 'Present' : 'Absent';
+                        }
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw === 1 ? 'Present' : 'Absent';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Contact actions
+function sendSMS() {
+    document.getElementById('smsModal').classList.add('active');
+    updateSMSPreview();
+}
+
+function callFather() {
+    if (confirm(`Call {{ student.father_name or 'Father' }} at {{ student.father_phone }}?`)) {
+        window.location.href = `tel:{{ student.father_phone }}`;
+    }
+}
+
+function callMother() {
+    {% if student.mother_phone %}
+    if (confirm(`Call {{ student.mother_name or 'Mother' }} at {{ student.mother_phone }}?`)) {
+        window.location.href = `tel:{{ student.mother_phone }}`;
+    }
+    {% endif %}
+}
+
+function sendEmail() {
+    // This would open email composer with student info
+    const subject = `Regarding {{ student.name }} (Roll: {{ student.roll_number }})`;
+    const body = `Dear Guardian,\n\nRegarding your child {{ student.name }} (Roll: {{ student.roll_number }}, Class: {{ student.class_name }}-{{ student.section }})...`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function showOnMap() {
+    if ("{{ student.address }}") {
+        const address = encodeURIComponent("{{ student.address }}");
+        window.open(`https://www.google.com/maps/search/?api=1&query=${address}`, '_blank');
+    }
+}
+
+// SMS functionality
+function updateSMSPreview() {
+    const template = document.getElementById('smsTemplate').value;
+    let message = document.getElementById('smsMessage').value;
+    
+    if (template && !message) {
+        // Load template message
+        const templates = {
+            'attendance': `Dear Guardian,\n\nYour child {{ student.name }} (Roll: {{ student.roll_number }}) has attended {{ present_count }} out of {{ total_classes }} classes.\nAttendance Rate: {{ "%.1f"|format(attendance_percentage) }}%.\n\n- Dewra High School`,
+            'performance': `Dear Guardian,\n\nPerformance update for {{ student.name }} (Roll: {{ student.roll_number }}). The student is performing well in class. Keep up the good work!\n\n- Dewra High School`,
+            'meeting': `Dear Guardian,\n\nParent-Teacher meeting scheduled for {{ student.name }}. Please visit school on Friday at 3:00 PM.\n\n- Dewra High School`,
+            'payment': `Dear Guardian,\n\nFee payment reminder for {{ student.name }} (Roll: {{ student.roll_number }}). Please clear dues by end of this month.\n\n- Dewra High School`,
+            'general': `Dear Guardian,\n\nImportant announcement regarding {{ student.name }}. Please check school notice board or contact class teacher.\n\n- Dewra High School`
+        };
+        
+        if (templates[template]) {
+            message = templates[template];
+            document.getElementById('smsMessage').value = message;
+        }
+    }
+    
+    // Update preview
+    const preview = document.getElementById('smsPreview');
+    preview.textContent = message || 'Your message preview will appear here...';
+    
+    // Update character count
+    const charCount = message.length;
+    document.getElementById('charCount').textContent = charCount;
+    
+    // Update color based on length
+    const counter = document.getElementById('charCount');
+    if (charCount > 160) {
+        counter.style.color = 'var(--danger)';
+    } else if (charCount > 140) {
+        counter.style.color = 'var(--warning)';
+    } else {
+        counter.style.color = 'var(--success)';
+    }
+}
+
+function sendSMSNow() {
+    const recipient = document.getElementById('smsRecipient').value;
+    const message = document.getElementById('smsMessage').value;
+    
+    if (!message.trim()) {
+        alert('Please enter a message');
+        return;
+    }
+    
+    if (message.length > 160) {
+        if (!confirm('Message is longer than 160 characters and will be split into multiple SMS. Continue?')) {
+            return;
+        }
+    }
+    
+    // Determine phone numbers
+    let phoneNumbers = [];
+    if (recipient === 'father' || recipient === 'both') {
+        phoneNumbers.push("{{ student.father_phone }}");
+    }
+    if ((recipient === 'mother' || recipient === 'both') && "{{ student.mother_phone }}") {
+        phoneNumbers.push("{{ student.mother_phone }}");
+    }
+    
+    if (phoneNumbers.length === 0) {
+        alert('No phone numbers available');
+        return;
+    }
+    
+    showLoader();
+    
+    // Send SMS via API
+    fetch('/api/send-sms', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            phones: phoneNumbers,
+            message: message,
+            student_id: {{ student.id }}
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`✅ SMS sent to ${data.sent} recipient(s)`);
+            closeModal('smsModal');
+        } else {
+            alert('❌ Failed to send SMS: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+    })
+    .finally(() => {
+        hideLoader();
+    });
+}
+
+function exportAttendance() {
+    showLoader();
+    fetch(`/api/student/{{ student.id }}/attendance/export`)
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `{{ student.name }}_Attendance_Report.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            hideLoader();
+        })
+        .catch(error => {
+            alert('Error exporting: ' + error.message);
+            hideLoader();
+        });
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    const smsMessage = document.getElementById('smsMessage');
+    if (smsMessage) {
+        smsMessage.addEventListener('input', updateSMSPreview);
+    }
+});
+</script>
+{% endblock %}

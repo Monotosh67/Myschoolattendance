@@ -1,0 +1,659 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Dewra High School{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="welcome-hero">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                <span class="gradient-text">Welcome to</span><br>
+                Dewra High School Smart System
+            </h1>
+            <p class="hero-subtitle">Where every student is nuclear energy capable of changing the world!</p>
+            
+            {% if not current_user.is_authenticated %}
+            <div class="hero-actions">
+                <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-sign-in-alt"></i> Login to System
+                </a>
+                <a href="#features" class="btn btn-outline btn-lg">
+                    <i class="fas fa-star"></i> Explore Features
+                </a>
+            </div>
+            {% else %}
+            <div class="hero-actions">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                </a>
+                {% if current_user.role == 'teacher' %}
+                <a href="{{ url_for('take_attendance') }}" class="btn btn-accent btn-lg">
+                    <i class="fas fa-check-circle"></i> Take Attendance
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="hero-graphic">
+            <div class="graphic-container">
+                <i class="fas fa-graduation-cap"></i>
+                <div class="floating-elements">
+                    <span class="float-element">🎓</span>
+                    <span class="float-element">📚</span>
+                    <span class="float-element">🏫</span>
+                    <span class="float-element">🌟</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if quote %}
+    <div class="quote-card">
+        <div class="quote-icon">
+            <i class="fas fa-quote-left"></i>
+        </div>
+        <div class="quote-content">
+            <p class="quote-text">{{ quote.quote }}</p>
+            {% if quote.author %}
+            <p class="quote-author">— {{ quote.author }}</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if joy_message %}
+    <div class="joy-banner">
+        <div class="joy-content">
+            <i class="fas fa-sparkles"></i>
+            <span>{{ joy_message }}</span>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div id="features" class="features-section">
+        <h2 class="section-title">System Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 class="feature-title">Smart Attendance</h3>
+                <p class="feature-description">
+                    Mark attendance digitally with instant SMS notifications to parents. Professional PDF reports generated automatically.
+                </p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-sms"></i>
+                </div>
+                <h3 class="feature-title">Instant SMS</h3>
+                <p class="feature-description">
+                    Automated SMS alerts to guardians when attendance is marked. Customizable message templates.
+                </p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3 class="feature-title">Analytics & Reports</h3>
+                <p class="feature-description">
+                    Detailed attendance analytics, student performance tracking, and comprehensive reports.
+                </p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 class="feature-title">Teacher Portal</h3>
+                <p class="feature-description">
+                    Dedicated portal for teachers to manage classes, view student profiles, and track attendance history.
+                </p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h3 class="feature-title">Admin Dashboard</h3>
+                <p class="feature-description">
+                    Complete administrative control with student management, teacher assignments, and system configuration.
+                </p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-file-pdf"></i>
+                </div>
+                <h3 class="feature-title">Professional PDFs</h3>
+                <p class="feature-description">
+                    Generate official, professional-grade attendance reports with signatures and school branding.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stats-section">
+        <div class="stat-card">
+            <div class="stat-number" id="statStudents">0</div>
+            <div class="stat-label">Total Students</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="statTeachers">0</div>
+            <div class="stat-label">Active Teachers</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="statClasses">0</div>
+            <div class="stat-label">Classes</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" id="statAttendance">0</div>
+            <div class="stat-label">Today's Attendance</div>
+        </div>
+    </div>
+    
+    <div class="motivation-section">
+        <div class="motivation-content">
+            <h2>Our Vision</h2>
+            <p class="vision-text">
+                "Every student at Dewra High School is like nuclear energy — with the potential to transform society, 
+                reshape nations, and revolutionize the entire world. Our mission is to provide the environment 
+                where this energy can be safely harnessed and directed toward positive change."
+            </p>
+            <p class="vision-author">— Saiful Hawlader</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.page-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.welcome-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, rgba(20, 25, 50, 0.9) 0%, rgba(30, 35, 60, 0.9) 100%);
+    border-radius: 20px;
+    margin-bottom: 30px;
+    border: 2px solid var(--card-border);
+    position: relative;
+    overflow: hidden;
+}
+
+.welcome-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+    border-radius: 20px 20px 0 0;
+}
+
+.hero-content {
+    flex: 1;
+    z-index: 2;
+}
+
+.hero-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    line-height: 1.2;
+}
+
+.gradient-text {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    font-size: 1.2rem;
+    color: var(--light);
+    opacity: 0.9;
+    margin-bottom: 30px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+    font-size: 1rem;
+}
+
+.btn-lg {
+    padding: 15px 30px;
+    font-size: 1.1rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+}
+
+.btn-outline {
+    background: transparent;
+    border-color: var(--card-border);
+    color: var(--light);
+}
+
+.btn-outline:hover {
+    background: rgba(0, 212, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.btn-accent {
+    background: linear-gradient(135deg, var(--accent), #00cc66);
+    color: var(--dark);
+}
+
+.btn-accent:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 255, 136, 0.4);
+}
+
+.hero-graphic {
+    margin-top: 30px;
+}
+
+.graphic-container {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(255, 0, 234, 0.1));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid var(--card-border);
+}
+
+.graphic-container i {
+    font-size: 4rem;
+    color: var(--primary);
+}
+
+.floating-elements {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.float-element {
+    position: absolute;
+    font-size: 1.5rem;
+    animation: float 6s infinite ease-in-out;
+}
+
+.float-element:nth-child(1) {
+    top: 10%;
+    left: 20%;
+    animation-delay: 0s;
+}
+
+.float-element:nth-child(2) {
+    top: 20%;
+    right: 10%;
+    animation-delay: 1.5s;
+}
+
+.float-element:nth-child(3) {
+    bottom: 30%;
+    left: 10%;
+    animation-delay: 3s;
+}
+
+.float-element:nth-child(4) {
+    bottom: 10%;
+    right: 20%;
+    animation-delay: 4.5s;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-20px) rotate(180deg);
+    }
+}
+
+.quote-card {
+    background: linear-gradient(135deg, rgba(20, 25, 50, 0.95), rgba(30, 35, 60, 0.95));
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    border: 2px solid var(--card-border);
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.quote-icon {
+    color: var(--primary);
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.quote-content {
+    flex: 1;
+}
+
+.quote-text {
+    font-size: 1.2rem;
+    font-style: italic;
+    color: var(--light);
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+
+.quote-author {
+    color: var(--primary);
+    font-weight: 600;
+    text-align: right;
+}
+
+.joy-banner {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 255, 136, 0.1));
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 30px;
+    border: 2px solid var(--card-border);
+    animation: pulse 2s infinite;
+}
+
+.joy-content {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.joy-content i {
+    font-size: 1.5rem;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 10px rgba(0, 212, 255, 0);
+    }
+}
+
+.features-section {
+    margin-bottom: 40px;
+}
+
+.section-title {
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 40px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+.feature-card {
+    background: rgba(20, 25, 50, 0.8);
+    border-radius: 15px;
+    padding: 25px;
+    border: 2px solid var(--card-border);
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+    border-color: var(--primary);
+}
+
+.feature-icon {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    color: white;
+}
+
+.feature-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: var(--light);
+}
+
+.feature-description {
+    color: var(--gray);
+    line-height: 1.6;
+}
+
+.stats-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, rgba(20, 25, 50, 0.9), rgba(30, 35, 60, 0.9));
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    border: 2px solid var(--card-border);
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    transform: scale(1.05);
+    border-color: var(--primary);
+}
+
+.stat-number {
+    font-size: 3rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+    margin-bottom: 10px;
+}
+
+.stat-label {
+    color: var(--gray);
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+.motivation-section {
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(0, 255, 136, 0.05));
+    border-radius: 20px;
+    padding: 40px;
+    border: 2px solid var(--card-border);
+    text-align: center;
+}
+
+.motivation-content h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: var(--primary);
+}
+
+.vision-text {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    color: var(--light);
+    margin-bottom: 20px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.vision-author {
+    color: var(--accent);
+    font-weight: 600;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.1rem;
+    }
+    
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-section {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .btn-lg {
+        padding: 12px 20px;
+        font-size: 1rem;
+    }
+    
+    .quote-card {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .quote-icon {
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-title {
+        font-size: 1.7rem;
+    }
+    
+    .stats-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .hero-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+// Animate stats counter
+function animateCounter(element, target) {
+    let current = 0;
+    const increment = target / 50;
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= target) {
+            current = target;
+            clearInterval(timer);
+        }
+        element.textContent = Math.floor(current).toLocaleString();
+    }, 30);
+}
+
+// Load stats via API
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch stats from server
+    fetch('/api/system-stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                animateCounter(document.getElementById('statStudents'), data.stats.total_students);
+                animateCounter(document.getElementById('statTeachers'), data.stats.total_teachers);
+                animateCounter(document.getElementById('statClasses'), data.stats.active_classes);
+                animateCounter(document.getElementById('statAttendance'), data.stats.today_attendance);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading stats:', error);
+            // Set default values
+            document.getElementById('statStudents').textContent = '150';
+            document.getElementById('statTeachers').textContent = '25';
+            document.getElementById('statClasses').textContent = '10';
+            document.getElementById('statAttendance').textContent = '120';
+        });
+    
+    // Add smooth scroll for features link
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            if (targetId === '#') return;
+            
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+                targetElement.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

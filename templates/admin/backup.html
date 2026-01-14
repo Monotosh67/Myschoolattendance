@@ -1,0 +1,1183 @@
+{% extends "base.html" %}
+
+{% block title %}Backup & Restore - Admin{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1><i class="fas fa-database"></i> Backup & Restore</h1>
+        <p>Manage system backups and data restoration</p>
+    </div>
+
+    <!-- Backup Status -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-info-circle"></i> System Status</h3>
+        </div>
+        <div class="card-body">
+            <div class="status-grid">
+                <div class="status-item success">
+                    <i class="fas fa-database"></i>
+                    <div>
+                        <h4>Database Size</h4>
+                        <p>{{ db_size }}</p>
+                    </div>
+                </div>
+                
+                <div class="status-item info">
+                    <i class="fas fa-save"></i>
+                    <div>
+                        <h4>Last Backup</h4>
+                        <p>
+                            {% if backup_logs[0] %}
+                                {{ backup_logs[0].created_at.strftime('%d/%m/%Y %I:%M %p') }}
+                            {% else %}
+                                Never
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="status-item warning">
+                    <i class="fas fa-history"></i>
+                    <div>
+                        <h4>Backup Count</h4>
+                        <p>{{ backup_logs|length }} backup(s) stored</p>
+                    </div>
+                </div>
+                
+                <div class="status-item primary">
+                    <i class="fas fa-shield-alt"></i>
+                    <div>
+                        <h4>Auto Backup</h4>
+                        <p>Daily at 2:00 AM</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup Actions -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-cogs"></i> Backup Actions</h3>
+        </div>
+        <div class="card-body">
+            <div class="action-grid">
+                <div class="action-card primary" onclick="createBackup()">
+                    <div class="action-icon">
+                        <i class="fas fa-save"></i>
+                    </div>
+                    <div class="action-info">
+                        <h4>Create Backup</h4>
+                        <p>Create a manual backup of the system</p>
+                    </div>
+                </div>
+                
+                <div class="action-card success" onclick="downloadLatestBackup()">
+                    <div class="action-icon">
+                        <i class="fas fa-download"></i>
+                    </div>
+                    <div class="action-info">
+                        <h4>Download Latest</h4>
+                        <p>Download the most recent backup</p>
+                    </div>
+                </div>
+                
+                <div class="action-card warning" onclick="showRestoreModal()">
+                    <div class="action-icon">
+                        <i class="fas fa-redo"></i>
+                    </div>
+                    <div class="action-info">
+                        <h4>Restore System</h4>
+                        <p>Restore from a backup file</p>
+                    </div>
+                </div>
+                
+                <div class="action-card danger" onclick="showCleanupModal()">
+                    <div class="action-icon">
+                        <i class="fas fa-broom"></i>
+                    </div>
+                    <div class="action-info">
+                        <h4>Cleanup Old Backups</h4>
+                        <p>Delete backups older than 30 days</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="backup-notes">
+                <h4><i class="fas fa-lightbulb"></i> Important Notes</h4>
+                <ul>
+                    <li>Backups are stored in the <code>instance/backups</code> directory</li>
+                    <li>Automatic backups run daily at 2:00 AM</li>
+                    <li>Keep at least one backup stored off-site</li>
+                    <li>Test restoration process regularly</li>
+                    <li>Backups older than 30 days are automatically cleaned up</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup History -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-history"></i> Backup History</h3>
+            <div class="header-actions">
+                <button class="btn-sm btn-secondary" onclick="refreshBackups()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Type</th>
+                            <th>File Size</th>
+                            <th>Status</th>
+                            <th>Details</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for backup in backup_logs %}
+                        <tr>
+                            <td>
+                                <div class="backup-time">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <div>
+                                        <strong>{{ backup.created_at.strftime('%d/%m/%Y') }}</strong>
+                                        <small>{{ backup.created_at.strftime('%I:%M %p') }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="backup-type {{ backup.backup_type }}">
+                                    <i class="fas fa-{{ 'cog' if backup.backup_type == 'manual' else 'robot' }}"></i>
+                                    {{ backup.backup_type|title }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if backup.file_size %}
+                                {{ "{:.1f}".format(backup.file_size / 1024 / 1024) }} MB
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if backup.status == 'success' %}
+                                <span class="status-badge success">
+                                    <i class="fas fa-check-circle"></i> Success
+                                </span>
+                                {% else %}
+                                <span class="status-badge danger">
+                                    <i class="fas fa-times-circle"></i> Failed
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="backup-details">
+                                    {{ backup.details|truncate(50) }}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    {% if backup.status == 'success' %}
+                                    <button class="btn-icon btn-info" 
+                                            onclick="downloadBackup('{{ backup.file_path }}')"
+                                            title="Download">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <button class="btn-icon btn-warning" 
+                                            onclick="restoreBackup('{{ backup.file_path }}')"
+                                            title="Restore">
+                                        <i class="fas fa-redo"></i>
+                                    </button>
+                                    {% endif %}
+                                    <button class="btn-icon btn-danger" 
+                                            onclick="deleteBackup({{ backup.id }})"
+                                            title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                        {% if backup_logs|length == 0 %}
+                        <tr>
+                            <td colspan="6" class="empty-state">
+                                <i class="fas fa-database fa-3x"></i>
+                                <h4>No Backups Found</h4>
+                                <p>Create your first backup using the "Create Backup" button</p>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Restore Modal -->
+<div class="modal-overlay" id="restoreModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3><i class="fas fa-redo"></i> Restore System</h3>
+            <button class="modal-close" onclick="closeModal('restoreModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="warning-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h4>Warning</h4>
+                <p>Restoring from a backup will overwrite all current data. This action cannot be undone.</p>
+            </div>
+            
+            <div class="restore-options">
+                <div class="option-header">
+                    <h4><i class="fas fa-upload"></i> Select Backup File</h4>
+                </div>
+                
+                <div class="option-tabs">
+                    <button class="option-tab active" data-option="existing">
+                        <i class="fas fa-history"></i> Existing Backup
+                    </button>
+                    <button class="option-tab" data-option="upload">
+                        <i class="fas fa-upload"></i> Upload Backup
+                    </button>
+                </div>
+                
+                <!-- Existing Backups -->
+                <div class="option-content active" id="existingOption">
+                    <div class="backup-list">
+                        {% for backup in backup_logs if backup.status == 'success' %}
+                        <div class="backup-item" onclick="selectBackup(this, '{{ backup.file_path }}')">
+                            <div class="backup-radio">
+                                <input type="radio" name="backupFile" value="{{ backup.file_path }}">
+                            </div>
+                            <div class="backup-info">
+                                <h5>{{ backup.created_at.strftime('%d/%m/%Y %I:%M %p') }}</h5>
+                                <p>{{ backup.backup_type|title }} • {{ "{:.1f}".format(backup.file_size / 1024 / 1024) }} MB</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        
+                        {% if backup_logs|selectattr('status', 'equalto', 'success')|list|length == 0 %}
+                        <div class="empty-backups">
+                            <i class="fas fa-database"></i>
+                            <p>No successful backups available</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Upload Backup -->
+                <div class="option-content" id="uploadOption">
+                    <div class="upload-area" id="uploadArea">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h5>Drop backup file here or click to browse</h5>
+                        <p>Supported formats: .db, .sqlite, .backup</p>
+                        <input type="file" id="backupUpload" accept=".db,.sqlite,.backup" hidden>
+                        <button type="button" class="btn-secondary" onclick="document.getElementById('backupUpload').click()">
+                            Browse Files
+                        </button>
+                    </div>
+                    <div id="uploadStatus" class="upload-status"></div>
+                </div>
+            </div>
+            
+            <div class="restore-confirm">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="confirmRestore">
+                    <span class="checkmark"></span>
+                    I understand that this will overwrite all current data
+                </label>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeModal('restoreModal')">
+                Cancel
+            </button>
+            <button type="button" class="btn-danger" onclick="confirmRestore()" id="restoreButton" disabled>
+                <i class="fas fa-redo"></i> Restore System
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Cleanup Modal -->
+<div class="modal-overlay" id="cleanupModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3><i class="fas fa-broom"></i> Cleanup Old Backups</h3>
+            <button class="modal-close" onclick="closeModal('cleanupModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="cleanup-info">
+                <i class="fas fa-trash-alt"></i>
+                <h4>Cleanup Old Backups</h4>
+                <p>This will delete all backup files older than:</p>
+                
+                <div class="cleanup-options">
+                    <select id="cleanupDays" class="form-select">
+                        <option value="7">7 days</option>
+                        <option value="15">15 days</option>
+                        <option value="30" selected>30 days</option>
+                        <option value="60">60 days</option>
+                    </select>
+                </div>
+                
+                <div class="estimated-cleanup">
+                    <i class="fas fa-database"></i>
+                    <span>Approximately <strong id="estimatedCleanup">0</strong> backups will be deleted</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeModal('cleanupModal')">
+                Cancel
+            </button>
+            <button type="button" class="btn-danger" onclick="confirmCleanup()">
+                <i class="fas fa-trash"></i> Cleanup Backups
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+.status-item {
+    padding: 20px;
+    border-radius: 10px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.status-item i {
+    font-size: 30px;
+}
+
+.status-item.success {
+    background: rgba(0, 204, 102, 0.1);
+    border: 1px solid var(--success);
+}
+
+.status-item.info {
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid var(--primary);
+}
+
+.status-item.warning {
+    background: rgba(255, 170, 0, 0.1);
+    border: 1px solid var(--warning);
+}
+
+.status-item.primary {
+    background: rgba(255, 0, 234, 0.1);
+    border: 1px solid var(--secondary);
+}
+
+.status-item h4 {
+    margin-bottom: 5px;
+    font-size: 16px;
+    color: var(--light);
+}
+
+.status-item p {
+    margin: 0;
+    color: var(--light);
+    opacity: 0.9;
+    font-size: 14px;
+}
+
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.action-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 25px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 212, 255, 0.2);
+}
+
+.action-card.primary {
+    border-color: var(--primary);
+}
+
+.action-card.success {
+    border-color: var(--success);
+}
+
+.action-card.warning {
+    border-color: var(--warning);
+}
+
+.action-card.danger {
+    border-color: var(--danger);
+}
+
+.action-card:hover.primary {
+    background: rgba(0, 212, 255, 0.1);
+}
+
+.action-card:hover.success {
+    background: rgba(0, 204, 102, 0.1);
+}
+
+.action-card:hover.warning {
+    background: rgba(255, 170, 0, 0.1);
+}
+
+.action-card:hover.danger {
+    background: rgba(255, 51, 102, 0.1);
+}
+
+.action-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+}
+
+.action-card.primary .action-icon {
+    background: var(--primary);
+}
+
+.action-card.success .action-icon {
+    background: var(--success);
+}
+
+.action-card.warning .action-icon {
+    background: var(--warning);
+}
+
+.action-card.danger .action-icon {
+    background: var(--danger);
+}
+
+.action-info h4 {
+    margin-bottom: 5px;
+    font-size: 16px;
+    color: var(--light);
+}
+
+.action-info p {
+    margin: 0;
+    color: var(--gray);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.backup-notes {
+    padding: 20px;
+    background: rgba(0, 212, 255, 0.05);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+}
+
+.backup-notes h4 {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--light);
+}
+
+.backup-notes ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.backup-notes li {
+    margin-bottom: 8px;
+    color: var(--gray);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.backup-notes code {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    color: var(--primary);
+}
+
+.backup-time {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.backup-time i {
+    color: var(--primary);
+}
+
+.backup-time strong {
+    display: block;
+    color: var(--light);
+    font-size: 14px;
+}
+
+.backup-time small {
+    display: block;
+    color: var(--gray);
+    font-size: 12px;
+}
+
+.backup-type {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.backup-type.manual {
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+.backup-type.scheduled {
+    background: rgba(0, 204, 102, 0.1);
+    color: var(--success);
+    border: 1px solid var(--success);
+}
+
+.backup-details {
+    font-size: 13px;
+    color: var(--gray);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.restore-options {
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 20px 0;
+}
+
+.option-header {
+    padding: 15px 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--card-border);
+}
+
+.option-header h4 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.option-tabs {
+    display: flex;
+    background: rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid var(--card-border);
+}
+
+.option-tab {
+    flex: 1;
+    padding: 12px;
+    background: none;
+    border: none;
+    color: var(--gray);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.option-tab.active {
+    color: var(--primary);
+    background: rgba(0, 212, 255, 0.1);
+    border-bottom: 2px solid var(--primary);
+}
+
+.option-content {
+    display: none;
+    padding: 20px;
+    min-height: 200px;
+}
+
+.option-content.active {
+    display: block;
+}
+
+.backup-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.backup-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 12px;
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.backup-item:hover {
+    background: rgba(0, 212, 255, 0.05);
+    border-color: var(--primary);
+}
+
+.backup-item.selected {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: var(--primary);
+}
+
+.backup-radio input {
+    width: 18px;
+    height: 18px;
+}
+
+.backup-info h5 {
+    margin: 0 0 5px 0;
+    color: var(--light);
+    font-size: 14px;
+}
+
+.backup-info p {
+    margin: 0;
+    color: var(--gray);
+    font-size: 12px;
+}
+
+.empty-backups {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--gray);
+}
+
+.empty-backups i {
+    font-size: 36px;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.upload-area {
+    border: 2px dashed var(--card-border);
+    border-radius: 10px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.upload-area:hover {
+    border-color: var(--primary);
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.upload-area i {
+    font-size: 48px;
+    color: var(--primary);
+    margin-bottom: 15px;
+}
+
+.upload-area h5 {
+    margin-bottom: 10px;
+    color: var(--light);
+}
+
+.upload-area p {
+    margin-bottom: 20px;
+    color: var(--gray);
+    font-size: 14px;
+}
+
+.upload-status {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 6px;
+    display: none;
+}
+
+.upload-status.success {
+    display: block;
+    background: rgba(0, 204, 102, 0.1);
+    border: 1px solid var(--success);
+    color: var(--success);
+}
+
+.upload-status.error {
+    display: block;
+    background: rgba(255, 51, 102, 0.1);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+}
+
+.restore-confirm {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 170, 0, 0.05);
+    border: 1px solid var(--warning);
+    border-radius: 8px;
+}
+
+.cleanup-info {
+    text-align: center;
+    padding: 20px;
+}
+
+.cleanup-info i {
+    font-size: 48px;
+    color: var(--danger);
+    margin-bottom: 15px;
+}
+
+.cleanup-info h4 {
+    margin-bottom: 10px;
+    color: var(--light);
+}
+
+.cleanup-info p {
+    color: var(--gray);
+    margin-bottom: 20px;
+}
+
+.cleanup-options {
+    margin: 20px 0;
+}
+
+.estimated-cleanup {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.estimated-cleanup i {
+    font-size: 20px;
+    color: var(--primary);
+    margin: 0;
+}
+
+.estimated-cleanup span {
+    color: var(--light);
+}
+
+.estimated-cleanup strong {
+    color: var(--primary);
+}
+
+@media (max-width: 768px) {
+    .action-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .backup-item {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Create backup
+function createBackup() {
+    if (confirm('Create a new backup of the system?')) {
+        showLoader();
+        
+        fetch('/admin/backup', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Backup created successfully!');
+                refreshBackups();
+            } else {
+                alert('❌ Backup failed: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        })
+        .finally(() => {
+            hideLoader();
+        });
+    }
+}
+
+// Download latest backup
+function downloadLatestBackup() {
+    const latestBackup = {{ backup_logs[0]|tojson|safe if backup_logs else 'null' }};
+    
+    if (!latestBackup || latestBackup.status !== 'success') {
+        alert('No successful backups available');
+        return;
+    }
+    
+    showLoader();
+    window.location.href = `/api/backup/download?path=${encodeURIComponent(latestBackup.file_path)}`;
+    setTimeout(() => hideLoader(), 2000);
+}
+
+// Download specific backup
+function downloadBackup(filePath) {
+    showLoader();
+    window.location.href = `/api/backup/download?path=${encodeURIComponent(filePath)}`;
+    setTimeout(() => hideLoader(), 2000);
+}
+
+// Restore from specific backup
+function restoreBackup(filePath) {
+    if (confirm(`Restore system from this backup?\n\nFile: ${filePath.split('/').pop()}\n\nThis will overwrite all current data.`)) {
+        showLoader();
+        
+        fetch('/api/backup/restore', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                file_path: filePath
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ System restored successfully! The page will reload.');
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                alert('❌ Restoration failed: ' + data.error);
+                hideLoader();
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+            hideLoader();
+        });
+    }
+}
+
+// Delete backup
+function deleteBackup(backupId) {
+    if (confirm('Delete this backup permanently?')) {
+        fetch('/api/backup/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                backup_id: backupId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Backup deleted successfully');
+                refreshBackups();
+            } else {
+                alert('❌ Deletion failed: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+        });
+    }
+}
+
+// Show restore modal
+function showRestoreModal() {
+    document.getElementById('restoreModal').classList.add('active');
+    document.getElementById('confirmRestore').checked = false;
+    document.getElementById('restoreButton').disabled = true;
+}
+
+// Show cleanup modal
+function showCleanupModal() {
+    // Estimate number of backups to delete
+    fetch('/api/backup/old-count?days=30')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('estimatedCleanup').textContent = data.count;
+            document.getElementById('cleanupModal').classList.add('active');
+        })
+        .catch(error => {
+            console.error('Error estimating cleanup:', error);
+            document.getElementById('estimatedCleanup').textContent = 'Unknown';
+            document.getElementById('cleanupModal').classList.add('active');
+        });
+}
+
+// Tab switching in restore modal
+document.querySelectorAll('.option-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+        const option = this.getAttribute('data-option');
+        
+        // Update tabs
+        document.querySelectorAll('.option-tab').forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Update content
+        document.querySelectorAll('.option-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(option + 'Option').classList.add('active');
+    });
+});
+
+// Backup selection
+function selectBackup(element, filePath) {
+    document.querySelectorAll('.backup-item').forEach(item => {
+        item.classList.remove('selected');
+        item.querySelector('input').checked = false;
+    });
+    
+    element.classList.add('selected');
+    element.querySelector('input').checked = true;
+    
+    // Enable restore button if confirmed
+    if (document.getElementById('confirmRestore').checked) {
+        document.getElementById('restoreButton').disabled = false;
+    }
+}
+
+// File upload handling
+const uploadArea = document.getElementById('uploadArea');
+const backupUpload = document.getElementById('backupUpload');
+const uploadStatus = document.getElementById('uploadStatus');
+
+if (uploadArea && backupUpload) {
+    uploadArea.addEventListener('click', () => backupUpload.click());
+    
+    backupUpload.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        // Validate file type
+        const validTypes = ['.db', '.sqlite', '.backup'];
+        const extension = '.' + file.name.split('.').pop().toLowerCase();
+        
+        if (!validTypes.includes(extension)) {
+            uploadStatus.className = 'upload-status error';
+            uploadStatus.innerHTML = `
+                <i class="fas fa-times-circle"></i>
+                Invalid file type. Please upload a .db, .sqlite, or .backup file.
+            `;
+            return;
+        }
+        
+        // Validate file size (max 100MB)
+        if (file.size > 100 * 1024 * 1024) {
+            uploadStatus.className = 'upload-status error';
+            uploadStatus.innerHTML = `
+                <i class="fas fa-times-circle"></i>
+                File too large. Maximum size is 100MB.
+            `;
+            return;
+        }
+        
+        // Show upload progress
+        uploadStatus.className = 'upload-status';
+        uploadStatus.innerHTML = `
+            <i class="fas fa-spinner fa-spin"></i>
+            Uploading ${file.name}...
+        `;
+        uploadStatus.style.display = 'block';
+        
+        // Create FormData and upload
+        const formData = new FormData();
+        formData.append('backup_file', file);
+        
+        fetch('/api/backup/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                uploadStatus.className = 'upload-status success';
+                uploadStatus.innerHTML = `
+                    <i class="fas fa-check-circle"></i>
+                    Backup uploaded successfully!
+                `;
+                
+                // Auto-select the uploaded backup
+                setTimeout(() => {
+                    selectBackup(document.querySelector('.backup-item:first-child'), data.file_path);
+                }, 1000);
+            } else {
+                uploadStatus.className = 'upload-status error';
+                uploadStatus.innerHTML = `
+                    <i class="fas fa-times-circle"></i>
+                    Upload failed: ${data.error}
+                `;
+            }
+        })
+        .catch(error => {
+            uploadStatus.className = 'upload-status error';
+            uploadStatus.innerHTML = `
+                <i class="fas fa-times-circle"></i>
+                Upload error: ${error.message}
+            `;
+        });
+    });
+}
+
+// Confirm restore
+function confirmRestore() {
+    const backupFile = document.querySelector('input[name="backupFile"]:checked');
+    const confirmCheck = document.getElementById('confirmRestore');
+    
+    if (!confirmCheck.checked) {
+        alert('Please confirm that you understand this will overwrite all current data');
+        return;
+    }
+    
+    if (!backupFile) {
+        alert('Please select a backup file to restore from');
+        return;
+    }
+    
+    if (confirm('WARNING: This will overwrite ALL current data. Are you absolutely sure?')) {
+        showLoader();
+        
+        fetch('/api/backup/restore', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                file_path: backupFile.value
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ System restored successfully! The application will restart.');
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                alert('❌ Restoration failed: ' + data.error);
+                hideLoader();
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+            hideLoader();
+        });
+    }
+}
+
+// Confirm cleanup
+function confirmCleanup() {
+    const days = document.getElementById('cleanupDays').value;
+    
+    if (confirm(`Delete all backups older than ${days} days? This action cannot be undone.`)) {
+        showLoader();
+        
+        fetch('/api/backup/cleanup', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                days: parseInt(days)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`✅ Successfully deleted ${data.deleted_count} backup(s)`);
+                closeModal('cleanupModal');
+                refreshBackups();
+            } else {
+                alert('❌ Cleanup failed: ' + data.error);
+                hideLoader();
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+            hideLoader();
+        });
+    }
+}
+
+// Update cleanup estimate
+document.getElementById('cleanupDays').addEventListener('change', function() {
+    const days = this.value;
+    
+    fetch(`/api/backup/old-count?days=${days}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('estimatedCleanup').textContent = data.count;
+        })
+        .catch(error => {
+            console.error('Error updating count:', error);
+        });
+});
+
+// Toggle restore button based on confirmation
+document.getElementById('confirmRestore').addEventListener('change', function() {
+    const backupSelected = document.querySelector('input[name="backupFile"]:checked');
+    document.getElementById('restoreButton').disabled = !(this.checked && backupSelected);
+});
+
+// Refresh backups list
+function refreshBackups() {
+    showLoader();
+    setTimeout(() => location.reload(), 1000);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,962 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Teachers - Dewra High School{% endblock %}
+
+{% block extra_css %}
+<style>
+.teachers-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.header-left h1 {
+    font-size: 2rem;
+    color: var(--light);
+    margin-bottom: 5px;
+}
+
+.header-left p {
+    color: var(--gray);
+    font-size: 1rem;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+    font-family: inherit;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+}
+
+.btn-outline {
+    background: transparent;
+    border-color: var(--card-border);
+    color: var(--light);
+}
+
+.btn-outline:hover {
+    background: rgba(0, 212, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.btn-sm {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #00cc66, var(--accent));
+    color: white;
+    border: none;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #ffaa00, #ffcc00);
+    color: var(--dark);
+    border: none;
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ff3366, var(--secondary));
+    color: white;
+    border: none;
+}
+
+.teachers-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: linear-gradient(135deg, rgba(20, 25, 50, 0.9), rgba(30, 35, 60, 0.9));
+    border-radius: 15px;
+    overflow: hidden;
+    border: 2px solid var(--card-border);
+    margin-bottom: 30px;
+}
+
+.teachers-table th {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 16px 20px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: none;
+}
+
+.teachers-table th:first-child {
+    border-top-left-radius: 13px;
+}
+
+.teachers-table th:last-child {
+    border-top-right-radius: 13px;
+}
+
+.teachers-table td {
+    padding: 14px 20px;
+    border-top: 1px solid var(--card-border);
+    color: var(--light);
+    font-size: 0.9rem;
+}
+
+.teachers-table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.teacher-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid var(--primary);
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+}
+
+.teacher-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.default-avatar {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.teacher-info h4 {
+    color: var(--light);
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 3px;
+}
+
+.teacher-info p {
+    color: var(--gray);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-active {
+    background: rgba(0, 204, 102, 0.2);
+    color: #00cc66;
+    border: 1px solid rgba(0, 204, 102, 0.3);
+}
+
+.status-inactive {
+    background: rgba(255, 51, 102, 0.2);
+    color: #ff3366;
+    border: 1px solid rgba(255, 51, 102, 0.3);
+}
+
+.table-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--primary);
+    text-decoration: none;
+    transition: all 0.3s;
+    border: 1px solid var(--card-border);
+    font-size: 0.9rem;
+}
+
+.action-btn:hover {
+    background: rgba(0, 212, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.action-btn.edit:hover {
+    background: rgba(0, 204, 102, 0.2);
+    color: #00cc66;
+}
+
+.action-btn.assign:hover {
+    background: rgba(255, 170, 0, 0.2);
+    color: #ffaa00;
+}
+
+.action-btn.toggle:hover {
+    background: rgba(255, 51, 102, 0.2);
+    color: #ff3366;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: var(--primary);
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    color: var(--light);
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.empty-state p {
+    margin-bottom: 30px;
+    font-size: 1.1rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-content {
+    background: linear-gradient(135deg, rgba(20, 25, 50, 0.95), rgba(30, 35, 60, 0.95));
+    border-radius: 20px;
+    padding: 30px;
+    border: 2px solid var(--card-border);
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--card-border);
+}
+
+.modal-header h3 {
+    font-size: 1.5rem;
+    color: var(--light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-header h3 i {
+    color: var(--primary);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--gray);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.3s;
+}
+
+.modal-close:hover {
+    color: var(--primary);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    color: var(--light);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+}
+
+.form-label i {
+    color: var(--primary);
+    width: 16px;
+}
+
+.form-control {
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid var(--card-border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: var(--light);
+    font-size: 1rem;
+    transition: all 0.3s;
+    font-family: inherit;
+    width: 100%;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+}
+
+.form-control::placeholder {
+    color: var(--gray);
+    opacity: 0.7;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    padding-top: 20px;
+    margin-top: 25px;
+    border-top: 2px solid var(--card-border);
+}
+
+.btn-block {
+    width: 100%;
+    justify-content: center;
+}
+
+.password-input {
+    position: relative;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--gray);
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 5px;
+    transition: color 0.3s;
+}
+
+.password-toggle:hover {
+    color: var(--primary);
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(10, 14, 39, 0.95);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    flex-direction: column;
+}
+
+.loading-overlay.active {
+    display: flex;
+}
+
+.loader {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(0, 212, 255, 0.2);
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.loader-text {
+    margin-top: 20px;
+    color: var(--primary);
+    font-weight: 500;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .header-left h1 {
+        font-size: 1.7rem;
+    }
+    
+    .teachers-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .table-actions {
+        flex-direction: column;
+        align-items: flex-end;
+    }
+    
+    .action-btn {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .modal-content {
+        padding: 20px;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .teachers-container {
+        padding: 15px;
+    }
+    
+    .teachers-table td {
+        padding: 10px;
+    }
+    
+    .teacher-info h4 {
+        font-size: 0.9rem;
+    }
+    
+    .teacher-info p {
+        font-size: 0.8rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="teachers-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h1>Manage Teachers</h1>
+            <p>Add, edit, and manage teacher accounts</p>
+        </div>
+        
+        <button type="button" class="btn btn-primary" id="addTeacherBtn">
+            <i class="fas fa-plus-circle"></i> Add New Teacher
+        </button>
+    </div>
+    
+    {% if teachers %}
+    <div class="table-responsive">
+        <table class="teachers-table">
+            <thead>
+                <tr>
+                    <th width="30%">Teacher</th>
+                    <th width="20%">Contact Information</th>
+                    <th width="20%">Classes Assigned</th>
+                    <th width="15%">Status</th>
+                    <th width="15%">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for teacher in teachers %}
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div class="teacher-avatar">
+                                {% if teacher.profile_image %}
+                                <img src="{{ url_for('static', filename=teacher.profile_image) }}" 
+                                     alt="{{ teacher.username }}"
+                                     onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'default-avatar\\'><i class=\\"fas fa-user-tie\\"></i></div>';">
+                                {% else %}
+                                <div class="default-avatar">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="teacher-info">
+                                <h4>{{ teacher.username }}</h4>
+                                <p><i class="fas fa-envelope"></i> {{ teacher.email }}</p>
+                                <p><i class="fas fa-calendar"></i> Joined {{ teacher.created_at.strftime('%d %b, %Y') }}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="teacher-info">
+                            <p><i class="fas fa-phone"></i> {{ teacher.phone or 'Not set' }}</p>
+                            <p><i class="fas fa-id-card"></i> ID: T-{{ teacher.id }}</p>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="teacher-info">
+                            {% set assigned_classes = teacher.get_assigned_classes_dict() %}
+                            {% if assigned_classes %}
+                                {% set class_count = namespace(total=0) %}
+                                {% for class_name, sections in assigned_classes.items() %}
+                                    {% for section in sections %}
+                                        {% set class_count.total = class_count.total + 1 %}
+                                    {% endfor %}
+                                {% endfor %}
+                                <p><i class="fas fa-chalkboard"></i> {{ class_count.total }} classes</p>
+                            {% else %}
+                                <p><i class="fas fa-exclamation-circle"></i> No classes assigned</p>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if teacher.is_active %}
+                        <span class="status-badge status-active">
+                            <i class="fas fa-check-circle"></i> Active
+                        </span>
+                        {% else %}
+                        <span class="status-badge status-inactive">
+                            <i class="fas fa-times-circle"></i> Inactive
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            <a href="#" class="action-btn edit" 
+                               data-teacher-id="{{ teacher.id }}"
+                               data-teacher-name="{{ teacher.username }}"
+                               data-teacher-email="{{ teacher.email }}"
+                               data-teacher-phone="{{ teacher.phone or '' }}"
+                               title="Edit Teacher">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{{ url_for('assign_teacher_form', teacher_id=teacher.id) }}" 
+                               class="action-btn assign" title="Assign Classes">
+                                <i class="fas fa-tasks"></i>
+                            </a>
+                            <form method="POST" action="{{ url_for('manage_teachers') }}" 
+                                  style="display: inline;" 
+                                  onsubmit="return confirm('Are you sure you want to {% if teacher.is_active %}deactivate{% else %}activate{% endif %} this teacher?')">
+                                <input type="hidden" name="action" value="toggle_status">
+                                <input type="hidden" name="teacher_id" value="{{ teacher.id }}">
+                                <button type="submit" class="action-btn toggle" title="{% if teacher.is_active %}Deactivate{% else %}Activate{% endif %} Teacher">
+                                    <i class="fas fa-power-off"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-user-tie"></i>
+        <h3>No Teachers Found</h3>
+        <p>
+            No teacher accounts have been created yet. 
+            Add your first teacher to get started with the system.
+        </p>
+        <button type="button" class="btn btn-primary" id="addTeacherBtn2">
+            <i class="fas fa-plus-circle"></i> Add First Teacher
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add/Edit Teacher Modal -->
+<div class="modal-overlay" id="teacherModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">
+                <i class="fas fa-user-plus"></i> Add New Teacher
+            </h3>
+            <button type="button" class="modal-close" id="modalClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('manage_teachers') }}" enctype="multipart/form-data" id="teacherForm">
+            <input type="hidden" name="action" id="formAction" value="add">
+            <input type="hidden" name="teacher_id" id="teacherId" value="">
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-user"></i> Full Name
+                    </label>
+                    <input type="text" 
+                           name="username" 
+                           id="teacherName"
+                           class="form-control" 
+                           placeholder="Enter teacher's full name"
+                           required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-envelope"></i> Email Address
+                    </label>
+                    <input type="email" 
+                           name="email" 
+                           id="teacherEmail"
+                           class="form-control" 
+                           placeholder="Enter email address"
+                           required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-phone"></i> Phone Number
+                    </label>
+                    <input type="tel" 
+                           name="phone" 
+                           id="teacherPhone"
+                           class="form-control" 
+                           placeholder="Enter phone number">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-image"></i> Profile Picture
+                    </label>
+                    <input type="file" 
+                           name="profile_image" 
+                           class="form-control"
+                           accept="image/*">
+                    <small style="color: var(--gray); font-size: 0.85rem;">
+                        Optional: Upload a profile picture (JPG, PNG, GIF)
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-lock"></i> Password
+                    </label>
+                    <div class="password-input">
+                        <input type="password" 
+                               name="password" 
+                               id="teacherPassword"
+                               class="form-control" 
+                               placeholder="Enter password"
+                               required>
+                        <button type="button" class="password-toggle" data-target="teacherPassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <small style="color: var(--gray); font-size: 0.85rem;">
+                        Password must be at least 6 characters long
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-lock"></i> Confirm Password
+                    </label>
+                    <div class="password-input">
+                        <input type="password" 
+                               name="confirm_password" 
+                               id="teacherConfirmPassword"
+                               class="form-control" 
+                               placeholder="Confirm password"
+                               required>
+                        <button type="button" class="password-toggle" data-target="teacherConfirmPassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" id="modalCancel">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Teacher
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loader"></div>
+    <div class="loader-text">Processing...</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Modal elements
+    const teacherModal = document.getElementById('teacherModal');
+    const modalClose = document.getElementById('modalClose');
+    const modalCancel = document.getElementById('modalCancel');
+    const addTeacherBtn = document.getElementById('addTeacherBtn');
+    const addTeacherBtn2 = document.getElementById('addTeacherBtn2');
+    const teacherForm = document.getElementById('teacherForm');
+    const formAction = document.getElementById('formAction');
+    const teacherId = document.getElementById('teacherId');
+    const modalTitle = document.getElementById('modalTitle');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    
+    // Form fields
+    const teacherName = document.getElementById('teacherName');
+    const teacherEmail = document.getElementById('teacherEmail');
+    const teacherPhone = document.getElementById('teacherPhone');
+    const teacherPassword = document.getElementById('teacherPassword');
+    const teacherConfirmPassword = document.getElementById('teacherConfirmPassword');
+    
+    // Open modal for adding teacher
+    function openAddModal() {
+        formAction.value = 'add';
+        teacherId.value = '';
+        modalTitle.innerHTML = '<i class="fas fa-user-plus"></i> Add New Teacher';
+        
+        // Reset form
+        teacherForm.reset();
+        teacherPassword.required = true;
+        teacherConfirmPassword.required = true;
+        
+        // Show modal
+        teacherModal.classList.add('active');
+    }
+    
+    // Open modal for editing teacher
+    function openEditModal(teacherData) {
+        formAction.value = 'edit';
+        teacherId.value = teacherData.teacherId;
+        modalTitle.innerHTML = '<i class="fas fa-user-edit"></i> Edit Teacher';
+        
+        // Fill form data
+        teacherName.value = teacherData.teacherName;
+        teacherEmail.value = teacherData.teacherEmail;
+        teacherPhone.value = teacherData.teacherPhone || '';
+        
+        // Make password optional for editing
+        teacherPassword.required = false;
+        teacherConfirmPassword.required = false;
+        teacherPassword.placeholder = 'Leave blank to keep current password';
+        teacherConfirmPassword.placeholder = 'Leave blank to keep current password';
+        
+        // Show modal
+        teacherModal.classList.add('active');
+    }
+    
+    // Close modal
+    function closeModal() {
+        teacherModal.classList.remove('active');
+    }
+    
+    // Event listeners for opening modal
+    if (addTeacherBtn) {
+        addTeacherBtn.addEventListener('click', openAddModal);
+    }
+    
+    if (addTeacherBtn2) {
+        addTeacherBtn2.addEventListener('click', openAddModal);
+    }
+    
+    // Event listeners for edit buttons
+    document.querySelectorAll('.action-btn.edit').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const teacherData = {
+                teacherId: this.dataset.teacherId,
+                teacherName: this.dataset.teacherName,
+                teacherEmail: this.dataset.teacherEmail,
+                teacherPhone: this.dataset.teacherPhone
+            };
+            
+            openEditModal(teacherData);
+        });
+    });
+    
+    // Event listeners for closing modal
+    modalClose.addEventListener('click', closeModal);
+    modalCancel.addEventListener('click', closeModal);
+    
+    // Close modal when clicking outside
+    teacherModal.addEventListener('click', function(e) {
+        if (e.target === teacherModal) {
+            closeModal();
+        }
+    });
+    
+    // Password toggle functionality
+    document.querySelectorAll('.password-toggle').forEach(toggle => {
+        toggle.addEventListener('click', function() {
+            const targetId = this.dataset.target;
+            const passwordInput = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+    
+    // Form validation and submission
+    teacherForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validate passwords for add action
+        if (formAction.value === 'add') {
+            const password = teacherPassword.value;
+            const confirmPassword = teacherConfirmPassword.value;
+            
+            if (password.length < 6) {
+                alert('Password must be at least 6 characters long');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+        }
+        
+        // Validate passwords for edit action (if provided)
+        if (formAction.value === 'edit' && teacherPassword.value) {
+            const password = teacherPassword.value;
+            const confirmPassword = teacherConfirmPassword.value;
+            
+            if (password.length < 6) {
+                alert('Password must be at least 6 characters long');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                alert('Passwords do not match');
+                return;
+            }
+        }
+        
+        // Show loading overlay
+        loadingOverlay.classList.add('active');
+        
+        // Submit form
+        setTimeout(() => {
+            teacherForm.submit();
+        }, 500);
+    });
+    
+    // Add animation to table rows
+    const tableRows = document.querySelectorAll('.teachers-table tbody tr');
+    tableRows.forEach((row, index) => {
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(-20px)';
+        
+        setTimeout(() => {
+            row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            row.style.opacity = '1';
+            row.style.transform = 'translateX(0)';
+        }, index * 50);
+    });
+    
+    // Add keyboard shortcut for adding teacher (Ctrl+Shift+T)
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.shiftKey && e.key === 'T') {
+            e.preventDefault();
+            openAddModal();
+        }
+        
+        // Close modal with Escape key
+        if (e.key === 'Escape' && teacherModal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+});
+</script>
+{% endblock %}

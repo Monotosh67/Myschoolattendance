@@ -1,0 +1,350 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Classes - Admin{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1><i class="fas fa-graduation-cap"></i> Manage Classes</h1>
+        <p>Create and manage classes and sections</p>
+    </div>
+
+    <!-- Add Class Form -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-plus-circle"></i> Add New Class</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('manage_classes') }}" class="form-inline">
+                <input type="hidden" name="action" value="add">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label><i class="fas fa-tag"></i> Class Name *</label>
+                        <input type="text" name="name" required 
+                               class="form-input" placeholder="e.g., 6, 7, 8">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-columns"></i> Sections *</label>
+                        <input type="text" name="sections" required 
+                               class="form-input" placeholder="e.g., A,B,C or A,B">
+                        <small class="form-help">Separate sections with commas</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-info-circle"></i> Description</label>
+                        <input type="text" name="description" 
+                               class="form-input" placeholder="e.g., Class Six">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-plus"></i> Add Class
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Classes List -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-list"></i> All Classes</h3>
+            <span class="badge">{{ classes|length }} Classes</span>
+        </div>
+        
+        <div class="card-body">
+            <div class="classes-grid">
+                {% for class in classes %}
+                <div class="class-card">
+                    <div class="class-header">
+                        <h4><i class="fas fa-graduation-cap"></i> Class {{ class.name }}</h4>
+                        <div class="class-actions">
+                            <button class="btn-icon btn-info" onclick="editClass({{ class.id }})"
+                                    title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-icon btn-danger" 
+                                    onclick="deleteClass({{ class.id }})"
+                                    title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="class-body">
+                        <div class="class-info">
+                            <div class="info-item">
+                                <i class="fas fa-info-circle"></i>
+                                <span>{{ class.description or 'No description' }}</span>
+                            </div>
+                            
+                            {% if class.class_teacher %}
+                            <div class="info-item">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <span>Class Teacher: {{ class.class_teacher.username }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="info-item">
+                                <i class="fas fa-users"></i>
+                                <span>
+                                    {% set sections = class.sections|from_json %}
+                                    {{ sections|length }} Section(s): 
+                                    {% for section in sections %}
+                                    <span class="section-tag">{{ section }}</span>
+                                    {% endfor %}
+                                </span>
+                            </div>
+                            
+                            <div class="info-item">
+                                <i class="fas fa-user-graduate"></i>
+                                <span>
+                                    {% set student_count = students_per_class.get(class.name, 0) %}
+                                    {{ student_count }} Student(s)
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if classes|length == 0 %}
+                <div class="empty-state">
+                    <i class="fas fa-graduation-cap fa-3x"></i>
+                    <h4>No Classes Created</h4>
+                    <p>Add your first class using the form above</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Class Modal -->
+<div class="modal-overlay" id="editClassModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Edit Class</h3>
+            <button class="modal-close" onclick="closeModal('editClassModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <form method="POST" action="{{ url_for('manage_classes') }}" id="editClassForm">
+            <input type="hidden" name="action" value="edit">
+            <input type="hidden" name="class_id" id="editClassId">
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label><i class="fas fa-tag"></i> Class Name</label>
+                    <input type="text" id="editClassName" class="form-input" readonly>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-info-circle"></i> Description</label>
+                    <input type="text" name="description" id="editClassDescription" 
+                           class="form-input" placeholder="Class description">
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-columns"></i> Sections</label>
+                    <input type="text" name="sections" id="editClassSections" 
+                           class="form-input" placeholder="e.g., A,B,C">
+                    <small class="form-help">Separate sections with commas</small>
+                </div>
+                
+                <div class="form-group">
+                    <label><i class="fas fa-chalkboard-teacher"></i> Class Teacher</label>
+                    <select name="class_teacher_id" id="editClassTeacher" class="form-select">
+                        <option value="0">-- No Class Teacher --</option>
+                        {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}">{{ teacher.username }} ({{ teacher.email }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeModal('editClassModal')">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.classes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.class-card {
+    background: rgba(20, 25, 50, 0.5);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s;
+}
+
+.class-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+    border-color: var(--primary);
+}
+
+.class-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.class-header h4 {
+    font-size: 18px;
+    color: var(--light);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.class-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.class-body {
+    padding: 5px 0;
+}
+
+.info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.info-item i {
+    color: var(--primary);
+    min-width: 20px;
+    margin-top: 2px;
+}
+
+.info-item span {
+    color: var(--light);
+    line-height: 1.5;
+}
+
+.section-tag {
+    display: inline-block;
+    background: rgba(255, 0, 234, 0.1);
+    color: var(--secondary);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin: 0 2px;
+    border: 1px solid var(--secondary);
+}
+
+.form-inline .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    align-items: end;
+}
+
+.form-inline .form-group {
+    margin-bottom: 0;
+}
+
+@media (max-width: 768px) {
+    .classes-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-inline .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function editClass(classId) {
+    // Fetch class data
+    fetch(`/api/class/${classId}`)
+        .then(response => response.json())
+        .then(classData => {
+            // Populate form
+            document.getElementById('editClassId').value = classId;
+            document.getElementById('editClassName').value = `Class ${classData.name}`;
+            document.getElementById('editClassDescription').value = classData.description || '';
+            document.getElementById('editClassSections').value = classData.sections_array.join(',');
+            document.getElementById('editClassTeacher').value = classData.class_teacher_id || '0';
+            
+            // Show modal
+            document.getElementById('editClassModal').classList.add('active');
+        })
+        .catch(error => {
+            alert('Error loading class data: ' + error.message);
+        });
+}
+
+function deleteClass(classId) {
+    if (confirm('Are you sure you want to delete this class? This action cannot be undone.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = "{{ url_for('manage_classes') }}";
+        
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'delete';
+        
+        const classIdInput = document.createElement('input');
+        classIdInput.type = 'hidden';
+        classIdInput.name = 'class_id';
+        classIdInput.value = classId;
+        
+        form.appendChild(actionInput);
+        form.appendChild(classIdInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Form validation
+document.querySelector('form[action="{{ url_for("manage_classes") }}"]').addEventListener('submit', function(e) {
+    const className = this.querySelector('input[name="name"]').value;
+    const sections = this.querySelector('input[name="sections"]').value;
+    
+    if (!className.match(/^\d+$/)) {
+        alert('Class name must be a number (e.g., 6, 7, 8)');
+        e.preventDefault();
+        return false;
+    }
+    
+    if (!sections.trim()) {
+        alert('Please enter at least one section');
+        e.preventDefault();
+        return false;
+    }
+    
+    showLoader();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,595 @@
+{% extends "base.html" %}
+
+{% block title %}Activity Log - Admin{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1><i class="fas fa-history"></i> Activity Log</h1>
+        <p>Monitor all system activities and user actions</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-filter"></i> Filter Logs</h3>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('activity_log') }}" class="filter-form">
+                <div class="filter-grid">
+                    <div class="filter-item">
+                        <label><i class="fas fa-user"></i> User</label>
+                        <select name="user" class="filter-select" onchange="this.form.submit()">
+                            <option value="all" {% if user_filter == 'all' %}selected{% endif %}>All Users</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}" {% if user_filter|string == user.id|string %}selected{% endif %}>
+                                {{ user.username }} ({{ user.role }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label><i class="fas fa-cogs"></i> Action</label>
+                        <select name="action" class="filter-select" onchange="this.form.submit()">
+                            <option value="all" {% if action_filter == 'all' %}selected{% endif %}>All Actions</option>
+                            {% for action in actions %}
+                            <option value="{{ action }}" {% if action_filter == action %}selected{% endif %}>
+                                {{ action|replace('_', ' ')|title }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label><i class="fas fa-folder"></i> Module</label>
+                        <select name="module" class="filter-select" onchange="this.form.submit()">
+                            <option value="all" {% if module_filter == 'all' %}selected{% endif %}>All Modules</option>
+                            {% for module in modules %}
+                            <option value="{{ module }}" {% if module_filter == module %}selected{% endif %}>
+                                {{ module|title }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="filter-item">
+                        <label>&nbsp;</label>
+                        <button type="button" class="btn-secondary" onclick="clearFilters()">
+                            <i class="fas fa-times"></i> Clear Filters
+                        </button>
+                        <button type="button" class="btn-danger" onclick="clearOldLogs()">
+                            <i class="fas fa-trash"></i> Clear Old Logs
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Activity Timeline -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-stream"></i> Recent Activities</h3>
+            <div class="header-actions">
+                <button class="btn-sm btn-secondary" onclick="refreshLogs()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <span class="log-count">{{ logs.total }} Logs</span>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <div class="activity-timeline">
+                {% for log in logs.items %}
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        {% if log.action == 'login' %}
+                        <i class="fas fa-sign-in-alt success"></i>
+                        {% elif log.action == 'logout' %}
+                        <i class="fas fa-sign-out-alt warning"></i>
+                        {% elif log.action.startswith('add_') %}
+                        <i class="fas fa-plus-circle primary"></i>
+                        {% elif log.action.startswith('edit_') or log.action.startswith('update_') %}
+                        <i class="fas fa-edit info"></i>
+                        {% elif log.action.startswith('delete_') %}
+                        <i class="fas fa-trash danger"></i>
+                        {% elif log.action.startswith('view_') %}
+                        <i class="fas fa-eye accent"></i>
+                        {% else %}
+                        <i class="fas fa-info-circle"></i>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="activity-content">
+                        <div class="activity-header">
+                            <h4>{{ log.action|replace('_', ' ')|title }}</h4>
+                            <span class="activity-time" title="{{ log.created_at }}">
+                                {{ log.created_at|time_ago }}
+                            </span>
+                        </div>
+                        
+                        <div class="activity-body">
+                            <div class="activity-details">
+                                <div class="detail-item">
+                                    <i class="fas fa-user"></i>
+                                    <span>
+                                        {% if log.user %}
+                                        {{ log.user.username }} ({{ log.user.role }})
+                                        {% else %}
+                                        System
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                
+                                {% if log.module %}
+                                <div class="detail-item">
+                                    <i class="fas fa-folder"></i>
+                                    <span>{{ log.module|title }}</span>
+                                </div>
+                                {% endif %}
+                                
+                                {% if log.ip_address %}
+                                <div class="detail-item">
+                                    <i class="fas fa-network-wired"></i>
+                                    <span>{{ log.ip_address }}</span>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if log.details %}
+                            <div class="activity-message">
+                                <i class="fas fa-comment-alt"></i>
+                                <p>{{ log.details }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if logs.total == 0 %}
+                <div class="empty-state">
+                    <i class="fas fa-history fa-3x"></i>
+                    <h4>No Activity Logs Found</h4>
+                    <p>Activity logs will appear here</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if logs.pages > 1 %}
+            <div class="pagination">
+                {% if logs.has_prev %}
+                <a href="{{ url_for('activity_log', page=logs.prev_num, user=user_filter, action=action_filter, module=module_filter) }}"
+                   class="page-btn">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </a>
+                {% endif %}
+                
+                <span class="page-info">
+                    Page {{ logs.page }} of {{ logs.pages }}
+                </span>
+                
+                {% if logs.has_next %}
+                <a href="{{ url_for('activity_log', page=logs.next_num, user=user_filter, action=action_filter, module=module_filter) }}"
+                   class="page-btn">
+                    Next <i class="fas fa-chevron-right"></i>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ users|length }}</h3>
+                <p>Total Users</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ logs.total }}</h3>
+                <p>Total Logs</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-calendar-day"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ today_logs }}</h3>
+                <p>Today's Activities</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ warning_logs }}</h3>
+                <p>Warning Actions</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clear Logs Modal -->
+<div class="modal-overlay" id="clearLogsModal">
+    <div class="modal modal-sm">
+        <div class="modal-header">
+            <h3><i class="fas fa-trash"></i> Clear Old Logs</h3>
+            <button class="modal-close" onclick="closeModal('clearLogsModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="modal-body">
+            <div class="warning-message">
+                <i class="fas fa-exclamation-triangle"></i>
+                <h4>Warning</h4>
+                <p>This will permanently delete activity logs older than 90 days. This action cannot be undone.</p>
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-calendar"></i> Delete logs older than</label>
+                <select id="daysToKeep" class="form-select">
+                    <option value="30">30 days</option>
+                    <option value="60">60 days</option>
+                    <option value="90" selected>90 days</option>
+                    <option value="180">180 days</option>
+                    <option value="365">1 year</option>
+                </select>
+            </div>
+            
+            <div class="estimated-count">
+                <i class="fas fa-database"></i>
+                <span>Approximately <strong id="estimatedLogs">0</strong> logs will be deleted</span>
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeModal('clearLogsModal')">
+                Cancel
+            </button>
+            <button type="button" class="btn-danger" onclick="confirmClearLogs()">
+                <i class="fas fa-trash"></i> Clear Logs
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.log-count {
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--primary);
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    border: 1px solid var(--primary);
+}
+
+.activity-timeline {
+    position: relative;
+    padding-left: 40px;
+}
+
+.activity-timeline::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--primary), transparent);
+}
+
+.activity-item {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 25px;
+    position: relative;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--card-bg);
+    border: 2px solid var(--card-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    position: absolute;
+    left: -40px;
+    z-index: 1;
+}
+
+.activity-icon .success { color: var(--success); }
+.activity-icon .warning { color: var(--warning); }
+.activity-icon .primary { color: var(--primary); }
+.activity-icon .info { color: var(--info); }
+.activity-icon .danger { color: var(--danger); }
+.activity-icon .accent { color: var(--accent); }
+
+.activity-content {
+    flex: 1;
+    background: rgba(20, 25, 50, 0.3);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 20px;
+    transition: all 0.3s;
+}
+
+.activity-content:hover {
+    border-color: var(--primary);
+    transform: translateX(5px);
+    box-shadow: 0 5px 15px rgba(0, 212, 255, 0.1);
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.activity-header h4 {
+    margin: 0;
+    font-size: 16px;
+    color: var(--light);
+}
+
+.activity-time {
+    font-size: 12px;
+    color: var(--gray);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.activity-body {
+    padding-top: 10px;
+}
+
+.activity-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--gray);
+}
+
+.detail-item i {
+    color: var(--primary);
+    width: 14px;
+}
+
+.activity-message {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 12px 15px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.activity-message i {
+    color: var(--accent);
+    margin-top: 2px;
+}
+
+.activity-message p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--light);
+    line-height: 1.5;
+}
+
+.warning-message {
+    text-align: center;
+    padding: 20px;
+    background: rgba(255, 170, 0, 0.1);
+    border: 1px solid var(--warning);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.warning-message i {
+    font-size: 36px;
+    color: var(--warning);
+    margin-bottom: 15px;
+}
+
+.warning-message h4 {
+    margin: 10px 0;
+    color: var(--warning);
+}
+
+.warning-message p {
+    color: var(--light);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.estimated-count {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(0, 212, 255, 0.1);
+    border: 1px solid var(--primary);
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+.estimated-count i {
+    color: var(--primary);
+}
+
+.estimated-count span {
+    color: var(--light);
+    font-size: 14px;
+}
+
+.estimated-count strong {
+    color: var(--primary);
+}
+
+/* Time ago filter */
+@jinja2.contextfilter
+def time_ago(ctx, dt):
+    now = datetime.now(timezone.utc)
+    diff = now - dt
+    
+    if diff.days > 365:
+        return f'{diff.days // 365} year(s) ago'
+    elif diff.days > 30:
+        return f'{diff.days // 30} month(s) ago'
+    elif diff.days > 0:
+        return f'{diff.days} day(s) ago'
+    elif diff.seconds > 3600:
+        return f'{diff.seconds // 3600} hour(s) ago'
+    elif diff.seconds > 60:
+        return f'{diff.seconds // 60} minute(s) ago'
+    else:
+        return 'Just now'
+
+@media (max-width: 768px) {
+    .activity-timeline {
+        padding-left: 30px;
+    }
+    
+    .activity-icon {
+        width: 30px;
+        height: 30px;
+        left: -30px;
+        font-size: 14px;
+    }
+    
+    .activity-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+    
+    .activity-details {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Clear filters
+function clearFilters() {
+    window.location.href = "{{ url_for('activity_log') }}";
+}
+
+// Refresh logs
+function refreshLogs() {
+    showLoader();
+    window.location.reload();
+}
+
+// Clear old logs
+function clearOldLogs() {
+    // Estimate number of logs to delete
+    fetch('/api/logs/count?days=90')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('estimatedLogs').textContent = data.count.toLocaleString();
+            document.getElementById('clearLogsModal').classList.add('active');
+        })
+        .catch(error => {
+            console.error('Error estimating logs:', error);
+            document.getElementById('estimatedLogs').textContent = 'Unknown';
+            document.getElementById('clearLogsModal').classList.add('active');
+        });
+}
+
+// Confirm clear logs
+function confirmClearLogs() {
+    const days = document.getElementById('daysToKeep').value;
+    
+    if (confirm(`Are you sure you want to delete all logs older than ${days} days? This action cannot be undone.`)) {
+        showLoader();
+        
+        fetch('/api/logs/clear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                days: parseInt(days)
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`✅ Successfully deleted ${data.deleted_count} logs`);
+                closeModal('clearLogsModal');
+                refreshLogs();
+            } else {
+                alert('❌ Error clearing logs: ' + data.error);
+                hideLoader();
+            }
+        })
+        .catch(error => {
+            alert('Error: ' + error.message);
+            hideLoader();
+        });
+    }
+}
+
+// Update estimated count when days change
+document.getElementById('daysToKeep').addEventListener('change', function() {
+    const days = this.value;
+    
+    fetch(`/api/logs/count?days=${days}`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('estimatedLogs').textContent = data.count.toLocaleString();
+        })
+        .catch(error => {
+            console.error('Error updating count:', error);
+        });
+});
+
+// Auto-refresh logs every 30 seconds
+setInterval(refreshLogs, 30000);
+</script>
+{% endblock %}

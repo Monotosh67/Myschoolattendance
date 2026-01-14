@@ -1,0 +1,823 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance History - Dewra High School{% endblock %}
+
+{% block extra_css %}
+<style>
+.history-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.header-left h1 {
+    font-size: 2rem;
+    color: var(--light);
+    margin-bottom: 5px;
+}
+
+.header-left p {
+    color: var(--gray);
+    font-size: 1rem;
+}
+
+.filter-section {
+    background: linear-gradient(135deg, rgba(20, 25, 50, 0.9), rgba(30, 35, 60, 0.9));
+    border-radius: 15px;
+    padding: 25px;
+    border: 2px solid var(--card-border);
+    margin-bottom: 30px;
+}
+
+.filter-title {
+    font-size: 1.3rem;
+    color: var(--light);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-title i {
+    color: var(--primary);
+}
+
+.filter-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.filter-label {
+    color: var(--light);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+}
+
+.filter-label i {
+    color: var(--primary);
+    width: 16px;
+}
+
+.filter-select, .filter-input {
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid var(--card-border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    color: var(--light);
+    font-size: 1rem;
+    transition: all 0.3s;
+    font-family: inherit;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2300d4ff' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    background-size: 16px;
+    padding-right: 40px;
+}
+
+.filter-input {
+    background-image: none;
+    padding-right: 16px;
+}
+
+.filter-select:focus, .filter-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+}
+
+.filter-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    padding-top: 20px;
+    border-top: 2px solid var(--card-border);
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+    font-family: inherit;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.4);
+}
+
+.btn-outline {
+    background: transparent;
+    border-color: var(--card-border);
+    color: var(--light);
+}
+
+.btn-outline:hover {
+    background: rgba(0, 212, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: linear-gradient(135deg, rgba(20, 25, 50, 0.9), rgba(30, 35, 60, 0.9));
+    border-radius: 15px;
+    overflow: hidden;
+    border: 2px solid var(--card-border);
+    margin-bottom: 30px;
+}
+
+.history-table th {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    padding: 16px 20px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border: none;
+}
+
+.history-table th:first-child {
+    border-top-left-radius: 13px;
+}
+
+.history-table th:last-child {
+    border-top-right-radius: 13px;
+}
+
+.history-table td {
+    padding: 14px 20px;
+    border-top: 1px solid var(--card-border);
+    color: var(--light);
+    font-size: 0.9rem;
+}
+
+.history-table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.05);
+}
+
+.session-date {
+    font-weight: 600;
+    color: var(--light);
+}
+
+.session-details {
+    color: var(--gray);
+    font-size: 0.85rem;
+    margin-top: 3px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.status-complete {
+    background: rgba(0, 204, 102, 0.2);
+    color: #00cc66;
+    border: 1px solid rgba(0, 204, 102, 0.3);
+}
+
+.status-pending {
+    background: rgba(255, 170, 0, 0.2);
+    color: #ffaa00;
+    border: 1px solid rgba(255, 170, 0, 0.3);
+}
+
+.stat-numbers {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.stat-value {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.stat-label {
+    color: var(--gray);
+    font-size: 0.85rem;
+}
+
+.table-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--primary);
+    text-decoration: none;
+    transition: all 0.3s;
+    border: 1px solid var(--card-border);
+}
+
+.action-btn:hover {
+    background: rgba(0, 212, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+.page-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 212, 255, 0.1);
+    color: var(--light);
+    text-decoration: none;
+    transition: all 0.3s;
+    border: 1px solid var(--card-border);
+    font-weight: 500;
+}
+
+.page-btn:hover:not(.disabled) {
+    background: rgba(0, 212, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.page-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white;
+    border-color: transparent;
+}
+
+.page-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.page-info {
+    color: var(--gray);
+    font-size: 0.9rem;
+    margin: 0 15px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: var(--primary);
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    color: var(--light);
+    margin-bottom: 15px;
+    font-size: 1.5rem;
+}
+
+.empty-state p {
+    margin-bottom: 30px;
+    font-size: 1.1rem;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+}
+
+.summary-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, rgba(20, 25, 50, 0.9), rgba(30, 35, 60, 0.9));
+    border-radius: 15px;
+    padding: 25px;
+    border: 2px solid var(--card-border);
+    transition: all 0.3s;
+}
+
+.summary-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--primary);
+}
+
+.summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.summary-title {
+    color: var(--light);
+    font-size: 1rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.summary-title i {
+    color: var(--primary);
+}
+
+.summary-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+}
+
+.summary-subtitle {
+    color: var(--gray);
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .header-left h1 {
+        font-size: 1.7rem;
+    }
+    
+    .filter-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .history-table {
+        display: block;
+        overflow-x: auto;
+    }
+    
+    .summary-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .table-actions {
+        flex-direction: column;
+    }
+    
+    .action-btn {
+        width: 100%;
+        height: 32px;
+    }
+}
+
+@media (max-width: 480px) {
+    .history-container {
+        padding: 15px;
+    }
+    
+    .filter-section {
+        padding: 20px;
+    }
+    
+    .filter-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .stat-numbers {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <div class="page-header">
+        <div class="header-left">
+            <h1>Attendance History</h1>
+            <p>View and manage your attendance records</p>
+        </div>
+        
+        <div>
+            <a href="{{ url_for('take_attendance') }}" class="btn btn-primary">
+                <i class="fas fa-plus-circle"></i> Take New Attendance
+            </a>
+        </div>
+    </div>
+    
+    <div class="summary-cards">
+        <div class="summary-card">
+            <div class="summary-header">
+                <div class="summary-title">
+                    <i class="fas fa-calendar-alt"></i> Total Sessions
+                </div>
+            </div>
+            <div class="summary-value">{{ attendance_history.total }}</div>
+            <div class="summary-subtitle">Attendance sessions recorded</div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="summary-header">
+                <div class="summary-title">
+                    <i class="fas fa-user-check"></i> Average Attendance
+                </div>
+            </div>
+            <div class="summary-value">
+                {% if attendance_history.items %}
+                    {% set total_rate = 0 %}
+                    {% set count = 0 %}
+                    {% for session in attendance_history.items %}
+                        {% if session.total_students > 0 %}
+                            {% set rate = (session.present_count / session.total_students * 100)|round(1) %}
+                            {% set total_rate = total_rate + rate %}
+                            {% set count = count + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if count > 0 %}
+                        {{ (total_rate / count)|round(1) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                {% else %}
+                    0%
+                {% endif %}
+            </div>
+            <div class="summary-subtitle">Average attendance rate</div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="summary-header">
+                <div class="summary-title">
+                    <i class="fas fa-file-pdf"></i> PDF Reports
+                </div>
+            </div>
+            <div class="summary-value">
+                {% if attendance_history.items %}
+                    {% set pdf_count = 0 %}
+                    {% for session in attendance_history.items %}
+                        {% if session.pdf_generated %}
+                            {% set pdf_count = pdf_count + 1 %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ pdf_count }}
+                {% else %}
+                    0
+                {% endif %}
+            </div>
+            <div class="summary-subtitle">PDF reports generated</div>
+        </div>
+    </div>
+    
+    <div class="filter-section">
+        <h3 class="filter-title">
+            <i class="fas fa-filter"></i> Filter Attendance Records
+        </h3>
+        
+        <form method="GET" action="{{ url_for('attendance_history') }}" class="filter-form">
+            <div class="filter-group">
+                <label class="filter-label">
+                    <i class="fas fa-chalkboard"></i> Class
+                </label>
+                <select name="class" class="filter-select">
+                    <option value="all" {% if class_filter == 'all' %}selected{% endif %}>All Classes</option>
+                    {% for class_name, sections in assigned_classes.items() %}
+                        <option value="{{ class_name }}" {% if class_filter == class_name %}selected{% endif %}>
+                            Class {{ class_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">
+                    <i class="fas fa-book"></i> Subject
+                </label>
+                <select name="subject" class="filter-select">
+                    <option value="all" {% if subject_filter == 'all' %}selected{% endif %}>All Subjects</option>
+                    {% for subject in all_subjects %}
+                        <option value="{{ subject.id }}" {% if subject_filter == subject.id|string %}selected{% endif %}>
+                            {{ subject.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">
+                    <i class="fas fa-calendar"></i> Date
+                </label>
+                <input type="date" name="date" class="filter-input" value="{{ date_filter }}">
+            </div>
+            
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Apply Filters
+                </button>
+                <a href="{{ url_for('attendance_history') }}" class="btn btn-outline">
+                    <i class="fas fa-redo"></i> Reset Filters
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    {% if attendance_history.items %}
+    <div class="table-responsive">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Class & Subject</th>
+                    <th>Attendance Statistics</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for session in attendance_history.items %}
+                <tr>
+                    <td>
+                        <div class="session-date">{{ session.date.strftime('%d %b, %Y') }}</div>
+                        <div class="session-details">{{ session.date.strftime('%A') }}</div>
+                    </td>
+                    <td>
+                        <div class="session-date">Class {{ session.class_name }}-{{ session.section }}</div>
+                        <div class="session-details">
+                            {{ session.subject.name if session.subject else 'N/A' }}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="stat-numbers">
+                            <div class="stat-item">
+                                <span class="stat-value">{{ session.total_students }}</span>
+                                <span class="stat-label">Total</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" style="color: #00cc66;">{{ session.present_count }}</span>
+                                <span class="stat-label">Present</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" style="color: #ff3366;">{{ session.absent_count }}</span>
+                                <span class="stat-label">Absent</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">
+                                    {% if session.total_students > 0 %}
+                                        {{ (session.present_count / session.total_students * 100)|round(1) }}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </span>
+                                <span class="stat-label">Rate</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if session.pdf_generated %}
+                        <span class="status-badge status-complete">
+                            <i class="fas fa-check-circle"></i> Complete
+                        </span>
+                        {% else %}
+                        <span class="status-badge status-pending">
+                            <i class="fas fa-clock"></i> No PDF
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="table-actions">
+                            {% if session.pdf_generated and session.pdf_url %}
+                            <a href="{{ session.pdf_url }}" class="action-btn" target="_blank" title="View PDF">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{{ url_for('download_attendance_pdf', 
+                                               class_name=session.class_name, 
+                                               section=session.section,
+                                               date=session.date.strftime('%Y-%m-%d'),
+                                               subject_id=session.subject_id) }}" 
+                               class="action-btn" title="Download PDF">
+                                <i class="fas fa-download"></i>
+                            </a>
+                            {% else %}
+                            <button class="action-btn generate-pdf-btn" 
+                                    data-session-id="{{ session.id }}"
+                                    title="Generate PDF">
+                                <i class="fas fa-file-pdf"></i>
+                            </button>
+                            {% endif %}
+                            <a href="{{ url_for('view_attendance_pdf', session_id=session.id) }}" 
+                               class="action-btn" title="View Details">
+                                <i class="fas fa-info-circle"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="pagination">
+        {% if attendance_history.has_prev %}
+        <a href="{{ url_for('attendance_history', page=attendance_history.prev_num, 
+                           class=class_filter, date=date_filter, subject=subject_filter) }}" 
+           class="page-btn">
+            <i class="fas fa-chevron-left"></i>
+        </a>
+        {% else %}
+        <span class="page-btn disabled">
+            <i class="fas fa-chevron-left"></i>
+        </span>
+        {% endif %}
+        
+        {% for page_num in attendance_history.iter_pages(left_edge=2, left_current=2, right_current=2, right_edge=2) %}
+            {% if page_num %}
+                {% if page_num == attendance_history.page %}
+                <span class="page-btn active">{{ page_num }}</span>
+                {% else %}
+                <a href="{{ url_for('attendance_history', page=page_num, 
+                                   class=class_filter, date=date_filter, subject=subject_filter) }}" 
+                   class="page-btn">{{ page_num }}</a>
+                {% endif %}
+            {% else %}
+                <span class="page-btn disabled">...</span>
+            {% endif %}
+        {% endfor %}
+        
+        {% if attendance_history.has_next %}
+        <a href="{{ url_for('attendance_history', page=attendance_history.next_num, 
+                           class=class_filter, date=date_filter, subject=subject_filter) }}" 
+           class="page-btn">
+            <i class="fas fa-chevron-right"></i>
+        </a>
+        {% else %}
+        <span class="page-btn disabled">
+            <i class="fas fa-chevron-right"></i>
+        </span>
+        {% endif %}
+        
+        <span class="page-info">
+            Page {{ attendance_history.page }} of {{ attendance_history.pages }}
+        </span>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-clipboard-list"></i>
+        <h3>No Attendance Records Found</h3>
+        <p>
+            You haven't marked any attendance yet, or no records match your filters.
+            Start by taking attendance for your classes.
+        </p>
+        <a href="{{ url_for('take_attendance') }}" class="btn btn-primary">
+            <i class="fas fa-check-circle"></i> Take Attendance
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Generate PDF button functionality
+    document.querySelectorAll('.generate-pdf-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const sessionId = this.dataset.sessionId;
+            const button = this;
+            const originalHTML = button.innerHTML;
+            
+            // Show loading state
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+            
+            // Send request to generate PDF
+            fetch(`/api/generate-pdf/${sessionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    alert('✅ ' + data.message);
+                    
+                    // Reload the page to show updated status
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    alert('❌ Error: ' + data.error);
+                    button.innerHTML = originalHTML;
+                    button.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Failed to generate PDF. Please try again.');
+                button.innerHTML = originalHTML;
+                button.disabled = false;
+            });
+        });
+    });
+    
+    // Date filter max value today
+    const dateInput = document.querySelector('input[name="date"]');
+    if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.max = today;
+    }
+    
+    // Add hover effects to summary cards
+    const summaryCards = document.querySelectorAll('.summary-card');
+    summaryCards.forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-3px)';
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Add animation to table rows
+    const tableRows = document.querySelectorAll('.history-table tbody tr');
+    tableRows.forEach((row, index) => {
+        row.style.opacity = '0';
+        row.style.transform = 'translateX(-20px)';
+        
+        setTimeout(() => {
+            row.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            row.style.opacity = '1';
+            row.style.transform = 'translateX(0)';
+        }, index * 50);
+    });
+});
+</script>
+{% endblock %}
