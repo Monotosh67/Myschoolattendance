@@ -1,29 +1,11 @@
-# Flask & Core Dependencies
 Flask==2.3.3
 Flask-SQLAlchemy==3.0.5
 Flask-Login==0.6.2
 Werkzeug==2.3.7
-
-# Database
-SQLAlchemy==2.0.19
-
-# PDF Generation
-WeasyPrint==60.1
-
-# QR Code Generation (Alternative without Pillow)
-segno==1.5.2
-
-# SMS & HTTP Requests
 requests==2.31.0
-
-# Security & Utilities
-python-dotenv==1.0.0
-passlib==1.7.4
-
-# Background Tasks
+qrcode==7.4.2
+segno==1.5.2
+weasyprint==59.0
+reportlab==4.0.4
 APScheduler==3.10.4
-
-# Excel/CSV Export (Optional)
-openpyxl==3.1.2
-
-qrcode
+python-dotenv==1.0.0
