@@ -535,10 +535,9 @@
                     </div>
                 </div>
                 
-                {% set sections = json.loads(class_obj.sections) %}
-                {% if sections %}
+                {% if class_obj.sections %}
                 <div class="sections-list">
-                    {% for section in sections %}
+                    {% for section in class_obj.sections %}
                     <div class="section-item">
                         <div class="section-checkbox">
                             <div class="checkbox-input {% if class_obj.name in assigned_classes and section in assigned_classes[class_obj.name] %}checked{% endif %}" 
