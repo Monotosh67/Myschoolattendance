@@ -1,267 +1,253 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Report - {{ school.school_name if school else 'Dewra High School' }}</title>
+    <title>Attendance Report - {{ school.school_name }}</title>
     <style>
         @page {
-            size: A4 landscape;
+            size: A4;
             margin: 2cm;
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 10pt;
+            }
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
+            font-family: 'Helvetica', 'Arial', sans-serif;
             line-height: 1.6;
-            margin: 0;
-            padding: 0;
+            color: #333;
         }
         
         .header {
             text-align: center;
             margin-bottom: 30px;
-            border-bottom: 3px solid #1e3a8a;
+            border-bottom: 3px double #000;
             padding-bottom: 20px;
         }
         
         .school-name {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
-            color: #1e3a8a;
+            color: #2c3e50;
             margin-bottom: 5px;
-        }
-        
-        .school-address {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
         }
         
         .report-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
-            color: #374151;
-            margin-top: 15px;
+            color: #3498db;
+            margin: 10px 0;
         }
         
-        .info-section {
+        .details-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+        
+        .details-table td {
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .details-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .details-table .label {
+            font-weight: bold;
+            width: 30%;
+            background-color: #f2f2f2;
+        }
+        
+        .attendance-table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+            font-size: 10pt;
+        }
+        
+        .attendance-table th {
+            background-color: #3498db;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid #2980b9;
+        }
+        
+        .attendance-table td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        
+        .attendance-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .status-present {
+            color: #27ae60;
+            font-weight: bold;
+        }
+        
+        .status-absent {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .summary-box {
+            background-color: #f8f9fa;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .summary-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        
+        .summary-stats {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 30px;
-            padding: 15px;
-            background: #f8fafc;
-            border-radius: 8px;
-            border-left: 4px solid #1e3a8a;
+            flex-wrap: wrap;
         }
         
-        .info-item {
-            flex: 1;
-            padding: 0 15px;
-        }
-        
-        .info-label {
-            font-weight: bold;
-            color: #374151;
-            font-size: 13px;
-            margin-bottom: 5px;
-        }
-        
-        .info-value {
-            color: #4b5563;
-            font-size: 14px;
-        }
-        
-        .stats-section {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        
-        .stat-card {
-            background: #f1f5f9;
-            padding: 15px;
-            border-radius: 8px;
+        .stat-item {
             text-align: center;
-            border: 1px solid #e2e8f0;
+            padding: 10px;
+            flex: 1;
+            min-width: 150px;
         }
         
         .stat-value {
             font-size: 24px;
             font-weight: bold;
-            color: #1e3a8a;
-            margin-bottom: 5px;
+            margin: 5px 0;
         }
         
         .stat-label {
             font-size: 12px;
-            color: #64748b;
-            font-weight: 500;
+            color: #7f8c8d;
         }
         
-        .attendance-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 30px;
-        }
-        
-        .attendance-table th {
-            background: #1e3a8a;
-            color: white;
-            padding: 12px 8px;
-            text-align: left;
-            font-size: 13px;
-            font-weight: 600;
-        }
-        
-        .attendance-table td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #e5e7eb;
-            font-size: 12px;
-        }
-        
-        .attendance-table tr:nth-child(even) {
-            background: #f9fafb;
-        }
-        
-        .status-present {
-            color: #059669;
-            font-weight: bold;
-        }
-        
-        .status-absent {
-            color: #dc2626;
-            font-weight: bold;
-        }
-        
-        .status-late {
-            color: #d97706;
-            font-weight: bold;
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 10pt;
+            color: #7f8c8d;
         }
         
         .signature-section {
             margin-top: 40px;
             display: flex;
             justify-content: space-between;
-            padding-top: 20px;
-            border-top: 2px solid #e5e7eb;
         }
         
-        .signature-block {
+        .signature-box {
             text-align: center;
             width: 30%;
         }
         
         .signature-line {
-            width: 200px;
-            height: 1px;
-            background: #374151;
+            border-top: 1px solid #000;
+            width: 80%;
             margin: 40px auto 10px;
-        }
-        
-        .signature-name {
-            font-weight: bold;
-            color: #374151;
-            margin-top: 10px;
-        }
-        
-        .signature-role {
-            color: #6b7280;
-            font-size: 12px;
-        }
-        
-        .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 15px;
-            border-top: 1px solid #e5e7eb;
-            color: #6b7280;
-            font-size: 11px;
         }
         
         .watermark {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
+            bottom: 50%;
+            right: 50%;
+            transform: translate(50%, 50%) rotate(-45deg);
             font-size: 80px;
-            color: rgba(30, 58, 138, 0.1);
-            font-weight: bold;
+            color: rgba(0, 0, 0, 0.1);
             z-index: -1;
-            pointer-events: none;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <div class="watermark">OFFICIAL</div>
+    <div class="watermark">{{ school.school_name }}</div>
     
     <div class="header">
-        <div class="school-name">
-            {{ school.school_name if school else 'DEWRA HIGH SCHOOL' }}
-        </div>
-        <div class="school-address">
-            {{ school.school_address if school else 'ভাংগা, ফরিদপুর' }}
-        </div>
-        <div class="report-title">OFFICIAL ATTENDANCE RECORD</div>
-    </div>
-    
-    <div class="info-section">
-        <div class="info-item">
-            <div class="info-label">Date</div>
-            <div class="info-value">{{ attendance_session.date.strftime('%d %B, %Y') }}</div>
-        </div>
-        <div class="info-item">
-            <div class="info-label">Class & Section</div>
-            <div class="info-value">Class {{ attendance_session.class_name }} - Section {{ attendance_session.section }}</div>
-        </div>
-        <div class="info-item">
-            <div class="info-label">Subject</div>
-            <div class="info-value">{{ subject.name if subject else 'Not Specified' }}</div>
-        </div>
-        <div class="info-item">
-            <div class="info-label">Teacher</div>
-            <div class="info-value">{{ teacher.username if teacher else 'Not Specified' }}</div>
+        <div class="school-name">{{ school.school_name }}</div>
+        <div class="report-title">DAILY ATTENDANCE REPORT</div>
+        <div style="font-size: 12pt; color: #7f8c8d;">
+            {{ school.school_address }}<br>
+            Established: {{ school.established_year }}
         </div>
     </div>
     
-    <div class="stats-section">
-        <div class="stat-card">
-            <div class="stat-value">{{ total_students }}</div>
-            <div class="stat-label">Total Students</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">{{ present_count }}</div>
-            <div class="stat-label">Present</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">{{ absent_count }}</div>
-            <div class="stat-label">Absent</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-value">{{ attendance_rate|round(1) }}%</div>
-            <div class="stat-label">Attendance Rate</div>
+    <table class="details-table">
+        <tr>
+            <td class="label">Class & Section:</td>
+            <td>{{ attendance_session.class_name }}-{{ attendance_session.section }}</td>
+            <td class="label">Date:</td>
+            <td>{{ attendance_session.date.strftime('%d %B, %Y') }}</td>
+        </tr>
+        <tr>
+            <td class="label">Subject:</td>
+            <td>{{ subject.name if subject else 'N/A' }}</td>
+            <td class="label">Day:</td>
+            <td>{{ attendance_session.date.strftime('%A') }}</td>
+        </tr>
+        <tr>
+            <td class="label">Teacher:</td>
+            <td>{{ teacher.username if teacher else 'N/A' }}</td>
+            <td class="label">Academic Year:</td>
+            <td>{{ attendance_session.date.year }}</td>
+        </tr>
+    </table>
+    
+    <div class="summary-box">
+        <div class="summary-title">Attendance Summary</div>
+        <div class="summary-stats">
+            <div class="stat-item">
+                <div class="stat-value">{{ total_students }}</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="color: #27ae60;">{{ present_count }}</div>
+                <div class="stat-label">Present</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="color: #e74c3c;">{{ absent_count }}</div>
+                <div class="stat-label">Absent</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="color: #3498db;">{{ "%.1f"|format(attendance_rate) }}%</div>
+                <div class="stat-label">Attendance Rate</div>
+            </div>
         </div>
     </div>
     
     <table class="attendance-table">
         <thead>
             <tr>
-                <th width="5%">S.N.</th>
-                <th width="25%">Student Name</th>
-                <th width="10%">Roll No.</th>
-                <th width="15%">Guardian Contact</th>
-                <th width="10%">Status</th>
-                <th width="35%">Remarks</th>
+                <th>#</th>
+                <th>Roll No.</th>
+                <th>Student Name</th>
+                <th>Father's Name</th>
+                <th>Contact</th>
+                <th>Status</th>
+                <th>Remarks</th>
             </tr>
         </thead>
         <tbody>
             {% for item in attendance_list %}
             <tr>
                 <td>{{ item.serial }}</td>
-                <td>{{ item.student.name }}</td>
                 <td>{{ item.student.roll_number }}</td>
-                <td>{{ item.phone }}</td>
+                <td>{{ item.student.name }}</td>
+                <td>{{ item.student.father_name or 'N/A' }}</td>
+                <td>{{ item.phone|format_phone or 'N/A' }}</td>
                 <td class="status-{{ item.status }}">
                     {{ item.status|upper }}
                 </td>
@@ -271,33 +257,31 @@
         </tbody>
     </table>
     
-    <div class="signature-section">
-        <div class="signature-block">
-            <div class="signature-line"></div>
-            <div class="signature-name">{{ teacher.username if teacher else 'Class Teacher' }}</div>
-            <div class="signature-role">Class Teacher</div>
-            <div class="signature-role">ID: T-{{ teacher.id if teacher else '0000' }}</div>
+    <div class="footer">
+        <div style="margin-bottom: 10px;">
+            <strong>School Motto:</strong> {{ school.motto }}
         </div>
-        
-        <div class="signature-block">
-            <div style="margin-top: 40px; color: #374151; font-size: 13px;">
-                Date: {{ attendance_session.date.strftime('%d/%m/%Y') }}<br>
-                Report ID: ATT-{{ attendance_session.id }}
-            </div>
-        </div>
-        
-        <div class="signature-block">
-            <div class="signature-line"></div>
-            <div class="signature-name">{{ school.head_teacher_name if school else 'Head Teacher' }}</div>
-            <div class="signature-role">Head Teacher</div>
-            <div class="signature-role">{{ school.school_name if school else 'Dewra High School' }}</div>
+        <div style="margin-bottom: 10px;">
+            Report generated on {{ current_date.strftime('%d %B, %Y at %I:%M %p') }}
         </div>
     </div>
     
-    <div class="footer">
-        <strong>OFFICIAL DOCUMENT</strong> | 
-        Generated on: {{ current_date.strftime('%d/%m/%Y %H:%M') }} | 
-        Page 1 of 1 | This document is valid for official purposes only.
+    <div class="signature-section">
+        <div class="signature-box">
+            <div>Class Teacher</div>
+            <div class="signature-line"></div>
+            <div style="margin-top: 5px;">{{ teacher.username if teacher else '' }}</div>
+        </div>
+        <div class="signature-box">
+            <div>Head Teacher</div>
+            <div class="signature-line"></div>
+            <div style="margin-top: 5px;">{{ school.head_teacher_name }}</div>
+        </div>
+        <div class="signature-box">
+            <div>School Stamp</div>
+            <div class="signature-line"></div>
+            <div style="margin-top: 5px;">{{ school.school_name }}</div>
+        </div>
     </div>
 </body>
 </html>
