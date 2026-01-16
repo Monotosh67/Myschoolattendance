@@ -2017,17 +2017,26 @@ def take_attendance():
         flash(f'Error loading attendance form: {str(e)}', 'danger')
         return redirect(url_for('dashboard'))
 
+# ============= FIXED STUDENT LOADING API ENDPOINT =============
 @app.route('/api/students/<class_name>/<section>')
 @login_required
 def get_students_by_class(class_name, section):
     """API to get students by class and section - FIXED VERSION"""
     try:
         if not class_name or not section:
-            return jsonify({'error': 'Class and section are required'}), 400
+            return jsonify({'success': False, 'error': 'Class and section are required'}), 400
+
+        app.logger.info(f"Fetching students for class: {class_name}, section: {section}")
+
+        # Convert section to uppercase for consistency
+        section = section.upper()
 
         if current_user.role == 'teacher':
-            if not current_user.is_assigned_to(class_name, section):
-                return jsonify({'error': 'You are not assigned to this class/section'}), 403
+            # Check if teacher is assigned to this class/section
+            assigned_classes = current_user.get_assigned_classes_dict()
+            if class_name not in assigned_classes or section not in assigned_classes[class_name]:
+                app.logger.warning(f"Teacher {current_user.id} not assigned to {class_name}-{section}")
+                return jsonify({'success': False, 'error': 'You are not assigned to this class/section'}), 403
 
         # Get active students
         students = Student.query.filter_by(
@@ -2036,8 +2045,7 @@ def get_students_by_class(class_name, section):
             is_active=True
         ).order_by(Student.roll_number).all()
 
-        if not students:
-            return jsonify({'students': [], 'message': 'No students found'}), 200
+        app.logger.info(f"Found {len(students)} students for {class_name}-{section}")
 
         student_list = []
         for student in students:
@@ -2062,16 +2070,70 @@ def get_students_by_class(class_name, section):
                 'photo_url': photo_url
             })
 
-        app.logger.info(f"Found {len(student_list)} students for {class_name}-{section}")
         return jsonify({
             'success': True,
             'students': student_list,
             'count': len(student_list),
-            'class': f"{class_name}-{section}"
+            'class': f"{class_name}-{section}",
+            'message': f'Found {len(student_list)} students'
         })
     except Exception as e:
         app.logger.error(f"Error getting students: {str(e)}\n{traceback.format_exc()}")
-        return jsonify({'error': str(e), 'success': False}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ============= ALTERNATIVE STUDENT LOADING ENDPOINT =============
+@app.route('/api/get-students')
+@login_required
+def get_students_alternative():
+    """Alternative endpoint to get students by class and section"""
+    try:
+        class_name = request.args.get('class')
+        section = request.args.get('section')
+        
+        if not class_name or not section:
+            return jsonify({'success': False, 'error': 'Class and section are required'}), 400
+        
+        # Convert section to uppercase for consistency
+        section = section.upper()
+        
+        app.logger.info(f"Alternative endpoint: Fetching students for {class_name}-{section}")
+        
+        # Check if teacher is assigned (for teachers only)
+        if current_user.role == 'teacher':
+            assigned_classes = current_user.get_assigned_classes_dict()
+            if class_name not in assigned_classes or section not in assigned_classes[class_name]:
+                return jsonify({'success': False, 'error': 'Not assigned to this class'}), 403
+        
+        # Query students
+        students = Student.query.filter(
+            Student.class_name == class_name,
+            Student.section == section,
+            Student.is_active == True
+        ).order_by(Student.roll_number).all()
+        
+        student_list = []
+        for student in students:
+            student_list.append({
+                'id': student.id,
+                'roll_number': student.roll_number,
+                'name': student.name,
+                'father_phone': student.father_phone,
+                'mother_phone': student.mother_phone,
+                'class_name': student.class_name,
+                'section': student.section
+            })
+        
+        app.logger.info(f"Alternative endpoint: Found {len(student_list)} students")
+        
+        return jsonify({
+            'success': True,
+            'students': student_list,
+            'count': len(student_list)
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Alternative endpoint error: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/attendance/history')
 @login_required
@@ -3377,7 +3439,7 @@ def backup_system():
         flash(f'Error loading backup page: {str(e)}', 'danger')
         return redirect(url_for('dashboard'))
 
-# ============= API ENDPOINTS =============
+# ============= ADDITIONAL API ENDPOINTS =============
 @app.route('/api/subjects/<class_name>')
 @login_required
 def get_subjects_by_class(class_name):
@@ -3561,6 +3623,47 @@ def cleanup_old_backups(backup_dir, days=30):
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+# ============= DEBUG ROUTE =============
+@app.route('/debug/students')
+@login_required
+def debug_students():
+    """Debug route to check student data"""
+    try:
+        class_name = request.args.get('class', '6')
+        section = request.args.get('section', 'A')
+        
+        # Convert section to uppercase
+        section = section.upper()
+        
+        # Check database
+        students_count = Student.query.filter_by(
+            class_name=class_name,
+            section=section,
+            is_active=True
+        ).count()
+        
+        # Get sample student
+        sample_student = Student.query.filter_by(
+            class_name=class_name,
+            section=section,
+            is_active=True
+        ).first()
+        
+        return jsonify({
+            'success': True,
+            'class': class_name,
+            'section': section,
+            'student_count': students_count,
+            'sample_student': {
+                'id': sample_student.id if sample_student else None,
+                'name': sample_student.name if sample_student else None,
+                'roll_number': sample_student.roll_number if sample_student else None
+            } if sample_student else None,
+            'message': f'Found {students_count} students in {class_name}-{section}'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # ============= INITIALIZATION =============
 def initialize_system():
     """Initialize system with default data"""
@@ -3702,6 +3805,42 @@ def initialize_system():
                     db.session.add(quote)
                 print("✅ Created default quotes")
 
+            # Create sample students if none exist
+            if Student.query.count() == 0:
+                print("⚠️  No students found. Creating sample students...")
+                
+                # Create sample student for class 6-A
+                sample_student = Student(
+                    roll_number='101',
+                    name='Sample Student',
+                    father_name='Sample Father',
+                    father_phone='01712345678',
+                    mother_name='Sample Mother',
+                    mother_phone='01812345678',
+                    class_name='6',
+                    section='A',
+                    address='Sample Address',
+                    is_active=True
+                )
+                db.session.add(sample_student)
+                
+                print("✅ Created sample student for testing")
+            
+            # Create sample teacher if none exist (other than admin)
+            if User.query.filter_by(role='teacher').count() == 0:
+                teacher = User(
+                    username='teacher1',
+                    email='teacher@dewra.edu.bd',
+                    password=generate_password_hash('Teacher@2025'),
+                    role='teacher',
+                    phone='01712345679',
+                    is_active=True,
+                    assigned_classes=json.dumps({'6': ['A', 'B'], '7': ['A']}),
+                    assigned_subjects=json.dumps({'6': ['1', '2'], '7': ['1']})
+                )
+                db.session.add(teacher)
+                print("✅ Created sample teacher: teacher@dewra.edu.bd / Teacher@2025")
+
             db.session.commit()
             print("🎉 System initialization complete!")
 
@@ -3755,6 +3894,8 @@ if __name__ == '__main__':
     print("🌐 Starting server on http://localhost:5000")
     print("👑 Super Admin: admin@dewra.edu.bd")
     print("🔑 Password: Admin@2025")
+    print("👨‍🏫 Sample Teacher: teacher@dewra.edu.bd")
+    print("🔑 Password: Teacher@2025")
     print("=" * 60)
     print("💡 Remember: Every student is nuclear energy!")
     print("✨ Made with ❤️ for Dewra High School")
