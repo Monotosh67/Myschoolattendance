@@ -380,6 +380,16 @@
     font-size: 0.95rem;
 }
 
+.error-message {
+    background: rgba(255, 51, 102, 0.1);
+    border: 2px solid rgba(255, 51, 102, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    margin: 10px 0;
+    color: #ff3366;
+    text-align: left;
+}
+
 .stats-display {
     display: flex;
     justify-content: space-between;
@@ -545,6 +555,7 @@
     .attendance-actions {
         justify-content: center;
         margin-top: 10px;
+        flex-wrap: wrap;
     }
     
     .stats-display {
@@ -783,6 +794,9 @@ document.addEventListener('DOMContentLoaded', function() {
     dateSelect.value = today;
     dateSelect.max = today;
     
+    console.log('Attendance form initialized');
+    console.log('Today\'s date:', today);
+    
     // Load subjects when class is selected
     classSelect.addEventListener('change', function() {
         const value = this.value;
@@ -798,6 +812,8 @@ document.addEventListener('DOMContentLoaded', function() {
         currentClass = class_name;
         currentSection = section;
         
+        console.log('Selected class:', currentClass, 'section:', currentSection);
+        
         // Enable buttons
         loadStudentsBtn.disabled = false;
         checkAttendanceBtn.disabled = false;
@@ -807,23 +823,37 @@ document.addEventListener('DOMContentLoaded', function() {
         subjectSelect.disabled = true;
         
         // Fetch subjects for this class
-        fetch(`/api/subjects/${class_name}`)
-            .then(response => response.json())
+        const subjectUrl = `/api/subjects/${class_name}`;
+        console.log('Fetching subjects from:', subjectUrl);
+        
+        fetch(subjectUrl)
+            .then(response => {
+                console.log('Subjects response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Subjects loaded:', data);
+                
                 if (data.error) {
                     subjectSelect.innerHTML = `<option value="">Error: ${data.error}</option>`;
                     return;
                 }
                 
                 subjectSelect.innerHTML = '<option value="">-- Select Subject --</option>';
-                data.subjects.forEach(subject => {
-                    const option = document.createElement('option');
-                    option.value = subject.id;
-                    option.textContent = subject.name;
-                    subjectSelect.appendChild(option);
-                });
-                
-                subjectSelect.disabled = false;
+                if (data.subjects && data.subjects.length > 0) {
+                    data.subjects.forEach(subject => {
+                        const option = document.createElement('option');
+                        option.value = subject.id;
+                        option.textContent = subject.name;
+                        subjectSelect.appendChild(option);
+                    });
+                    subjectSelect.disabled = false;
+                } else {
+                    subjectSelect.innerHTML = '<option value="">No subjects found</option>';
+                }
             })
             .catch(error => {
                 console.error('Error loading subjects:', error);
@@ -834,11 +864,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update subject ID when selected
     subjectSelect.addEventListener('change', function() {
         currentSubjectId = this.value;
+        console.log('Selected subject ID:', currentSubjectId);
     });
     
     // Update date when changed
     dateSelect.addEventListener('change', function() {
         currentDate = this.value;
+        console.log('Selected date:', currentDate);
     });
     
     // Load students button click
@@ -849,6 +881,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         currentDate = dateSelect.value;
+        
+        console.log('=== Loading Students ===');
+        console.log('Class:', currentClass);
+        console.log('Section:', currentSection);
+        console.log('Subject ID:', currentSubjectId);
+        console.log('Date:', currentDate);
         
         // Show loading state
         studentsList.innerHTML = `
@@ -864,29 +902,54 @@ document.addEventListener('DOMContentLoaded', function() {
         saveAttendanceBtn.disabled = true;
         
         // Fetch students
-        fetch(`/api/students/${currentClass}/${currentSection}`)
-            .then(response => response.json())
+        const url = `/api/students/${currentClass}/${currentSection}`;
+        console.log('Fetching students from URL:', url);
+        
+        fetch(url)
+            .then(response => {
+                console.log('Students API response status:', response.status);
+                console.log('Response headers:', response.headers);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                if (data.error) {
-                    studentsList.innerHTML = `
-                        <div class="empty-state">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <h3>Error Loading Students</h3>
-                            <p>${data.error}</p>
-                        </div>
-                    `;
-                    return;
+                console.log('=== Students Data Received ===');
+                console.log('Full response:', data);
+                console.log('Response type:', typeof data);
+                console.log('Success flag:', data.success);
+                console.log('Has students array:', Array.isArray(data.students));
+                
+                // Check for error in response
+                if (data.success === false || data.error) {
+                    throw new Error(data.error || 'Failed to load students');
                 }
                 
-                students = data.students;
+                // Get students array
+                students = data.students || [];
                 attendanceData = {};
+                
+                console.log('Number of students loaded:', students.length);
+                console.log('Students:', students);
                 
                 if (students.length === 0) {
                     studentsList.innerHTML = `
                         <div class="empty-state">
                             <i class="fas fa-user-graduate"></i>
                             <h3>No Students Found</h3>
-                            <p>No active students found in this class.</p>
+                            <p>No active students found in class ${currentClass}-${currentSection}.</p>
+                            <div class="error-message">
+                                <strong>Possible reasons:</strong><br>
+                                • No students registered for this class and section<br>
+                                • All students might be inactive<br>
+                                • Database might be empty<br><br>
+                                <strong>Debug Info:</strong><br>
+                                Class: ${currentClass}<br>
+                                Section: ${currentSection}<br>
+                                API URL: ${url}
+                            </div>
                         </div>
                     `;
                     return;
@@ -899,12 +962,32 @@ document.addEventListener('DOMContentLoaded', function() {
                 checkExistingAttendance();
             })
             .catch(error => {
-                console.error('Error loading students:', error);
+                console.error('=== Error Loading Students ===');
+                console.error('Error:', error);
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+                
                 studentsList.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-exclamation-triangle"></i>
                         <h3>Error Loading Students</h3>
-                        <p>Failed to load student data. Please try again.</p>
+                        <p>${error.message}</p>
+                        <div class="error-message">
+                            <strong>Debugging Information:</strong><br>
+                            Class: ${currentClass}<br>
+                            Section: ${currentSection}<br>
+                            Subject ID: ${currentSubjectId}<br>
+                            Date: ${currentDate}<br>
+                            API URL: ${url}<br><br>
+                            <strong>Troubleshooting Steps:</strong><br>
+                            1. Check browser console for detailed error logs<br>
+                            2. Verify students exist in database for this class<br>
+                            3. Check if you're assigned to this class<br>
+                            4. Try a different class/section<br>
+                        </div>
+                        <button onclick="location.reload()" class="btn-secondary" style="margin-top: 15px;">
+                            <i class="fas fa-redo"></i> Reload Page
+                        </button>
                     </div>
                 `;
             });
@@ -919,9 +1002,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         currentDate = dateSelect.value;
         
+        console.log('Checking attendance for:', currentDate, currentClass, currentSection, currentSubjectId);
+        
         fetch(`/api/attendance/check/${currentDate}/${currentClass}/${currentSection}/${currentSubjectId}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Attendance check result:', data);
+                
                 if (data.error) {
                     alert('Error checking attendance: ' + data.error);
                     return;
@@ -946,6 +1038,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             };
                         });
                         
+                        console.log('Loaded existing attendance:', attendanceData);
+                        
                         // Load students and apply existing attendance
                         loadStudentsBtn.click();
                     }
@@ -959,29 +1053,75 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     });
     
+    // Check existing attendance after loading students
+    function checkExistingAttendance() {
+        if (!currentDate || !currentClass || !currentSection || !currentSubjectId) {
+            return;
+        }
+        
+        console.log('Checking for existing attendance...');
+        
+        fetch(`/api/attendance/check/${currentDate}/${currentClass}/${currentSection}/${currentSubjectId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.exists && data.attendance && data.attendance.length > 0) {
+                    console.log('Found existing attendance, applying...');
+                    
+                    // Apply existing attendance to loaded students
+                    data.attendance.forEach(item => {
+                        if (attendanceData[item.student_id]) {
+                            attendanceData[item.student_id].status = item.status;
+                            attendanceData[item.student_id].notes = item.notes || '';
+                        } else {
+                            attendanceData[item.student_id] = {
+                                status: item.status,
+                                notes: item.notes || ''
+                            };
+                        }
+                    });
+                    
+                    // Re-render to show existing attendance
+                    renderStudentsList();
+                }
+            })
+            .catch(error => {
+                console.log('No existing attendance or error checking:', error);
+            });
+    }
+    
     // Render students list
     function renderStudentsList() {
         studentsList.innerHTML = '';
         
-        students.forEach(student => {
+        console.log('=== Rendering Students ===');
+        console.log('Number of students:', students.length);
+        
+        students.forEach((student, index) => {
+            console.log(`Student ${index + 1}:`, student);
+            
             const studentData = attendanceData[student.id] || { status: 'present', notes: '' };
             
             const studentCard = document.createElement('div');
             studentCard.className = 'student-card';
             studentCard.dataset.studentId = student.id;
             
+            // Build photo URL
+            let photoHtml = '';
+            if (student.photo_url) {
+                photoHtml = `<img src="${student.photo_url}" alt="${student.name}" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'default-avatar\\'><i class=\\"fas fa-user\\"></i></div>';">`;
+            } else {
+                photoHtml = `<div class="default-avatar"><i class="fas fa-user"></i></div>`;
+            }
+            
             studentCard.innerHTML = `
                 <div class="student-avatar">
-                    ${student.photo_url ? 
-                        `<img src="${student.photo_url}" alt="${student.name}" onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'default-avatar\\'><i class=\\"fas fa-user\\"></i></div>';">` :
-                        `<div class="default-avatar"><i class="fas fa-user"></i></div>`
-                    }
+                    ${photoHtml}
                 </div>
                 <div class="student-info">
                     <div class="student-name">${student.name}</div>
                     <div class="student-details">
                         <span><i class="fas fa-hashtag"></i> Roll: ${student.roll_number}</span>
-                        <span><i class="fas fa-phone"></i> ${student.father_phone}</span>
+                        <span><i class="fas fa-phone"></i> ${student.father_phone || 'N/A'}</span>
                     </div>
                 </div>
                 <div class="attendance-actions">
@@ -1009,8 +1149,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add event listeners to status buttons
         document.querySelectorAll('.status-btn').forEach(button => {
             button.addEventListener('click', function() {
-                const studentId = this.dataset.studentId;
+                const studentId = parseInt(this.dataset.studentId);
                 const status = this.dataset.status;
+                
+                console.log('Status changed for student', studentId, ':', status);
                 
                 // Update active state
                 this.parentElement.querySelectorAll('.status-btn').forEach(btn => {
@@ -1033,12 +1175,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add event listeners to notes inputs
         document.querySelectorAll('.notes-input').forEach(input => {
             input.addEventListener('input', function() {
-                const studentId = this.dataset.studentId;
+                const studentId = parseInt(this.dataset.studentId);
                 if (!attendanceData[studentId]) {
                     attendanceData[studentId] = { status: 'present', notes: this.value };
                 } else {
                     attendanceData[studentId].notes = this.value;
                 }
+                console.log('Notes updated for student', studentId, ':', this.value);
             });
         });
         
@@ -1046,6 +1189,9 @@ document.addEventListener('DOMContentLoaded', function() {
         updateAttendanceStats();
         attendanceStats.style.display = 'flex';
         saveAttendanceBtn.disabled = false;
+        
+        console.log('Students rendered successfully');
+        console.log('Current attendance data:', attendanceData);
     }
     
     // Update attendance statistics
@@ -1068,6 +1214,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('presentCount').textContent = present;
         document.getElementById('absentCount').textContent = absent + late;
         document.getElementById('attendanceRate').textContent = rate + '%';
+        
+        console.log('Stats updated:', { total, present, absent, late, rate: rate + '%' });
     }
     
     // Save attendance button click
@@ -1084,7 +1232,7 @@ document.addEventListener('DOMContentLoaded', function() {
             attendance.push({
                 student_id: student.id,
                 status: data.status,
-                notes: data.notes
+                notes: data.notes || ''
             });
         });
         
@@ -1092,10 +1240,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const requestData = {
             class_name: currentClass,
             section: currentSection,
-            subject_id: currentSubjectId,
+            subject_id: parseInt(currentSubjectId),
             date: currentDate,
             attendance: attendance
         };
+        
+        console.log('=== Saving Attendance ===');
+        console.log('Request data:', requestData);
         
         // Disable button and show loading
         this.disabled = true;
@@ -1109,27 +1260,40 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify(requestData)
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Save response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('=== Save Response ===');
+            console.log('Response:', data);
+            
             if (data.success) {
                 // Show success message
                 showSuccessMessage(data);
             } else {
-                alert('Error saving attendance: ' + data.error);
-                this.disabled = false;
-                this.innerHTML = '<i class="fas fa-save"></i> Save Attendance';
+                alert('Error saving attendance: ' + (data.error || 'Unknown error'));
+                saveAttendanceBtn.disabled = false;
+                saveAttendanceBtn.innerHTML = '<i class="fas fa-save"></i> Save Attendance';
             }
         })
         .catch(error => {
+            console.error('=== Save Error ===');
             console.error('Error:', error);
-            alert('Failed to save attendance. Please try again.');
-            this.disabled = false;
-            this.innerHTML = '<i class="fas fa-save"></i> Save Attendance';
+            alert('Failed to save attendance. Please try again.\n\nError: ' + error.message);
+            saveAttendanceBtn.disabled = false;
+            saveAttendanceBtn.innerHTML = '<i class="fas fa-save"></i> Save Attendance';
         });
     });
     
     // Show success message and PDF options
     function showSuccessMessage(data) {
+        console.log('=== Showing Success Message ===');
+        console.log('Data:', data);
+        
         // Hide students section
         studentsSection.style.display = 'none';
         
@@ -1140,6 +1304,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.pdf_download_url) {
             downloadPdfBtn.href = data.pdf_download_url;
             downloadPdfBtn.style.display = 'inline-flex';
+            console.log('Download PDF URL:', data.pdf_download_url);
         } else {
             downloadPdfBtn.style.display = 'none';
         }
@@ -1147,6 +1312,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (data.pdf_url) {
             viewPdfBtn.href = data.pdf_url;
             viewPdfBtn.style.display = 'inline-flex';
+            console.log('View PDF URL:', data.pdf_url);
         } else {
             viewPdfBtn.style.display = 'none';
         }
@@ -1154,11 +1320,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show success notification
         const message = `✅ ${data.message}\n📊 Stats: ${data.stats.present} present, ${data.stats.absent} absent (${data.stats.rate} attendance rate)`;
         alert(message);
+        
+        // Scroll to PDF section
+        pdfSection.scrollIntoView({ behavior: 'smooth' });
     }
     
     // Reset attendance button
     resetAttendanceBtn.addEventListener('click', function() {
-        if (confirm('Are you sure you want to reset all attendance? This cannot be undone.')) {
+        if (confirm('Are you sure you want to reset all attendance? This will set all students to "Present" status.')) {
+            console.log('Resetting attendance...');
             attendanceData = {};
             if (students.length > 0) {
                 renderStudentsList();
@@ -1168,6 +1338,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize date
     currentDate = dateSelect.value;
+    
+    console.log('=== Initialization Complete ===');
+    console.log('Initial date:', currentDate);
 });
 </script>
 {% endblock %}
