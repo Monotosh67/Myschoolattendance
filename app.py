@@ -1687,11 +1687,11 @@ def get_sms_message(student, status, class_name, section, date=None):
         msg = custom_msg.message_text
     else:
         if status == 'present':
-            msg = "প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে উপস্থিত ছিল। - দেবরা উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর"
+            msg = "প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে উপস্থিত ছিল। - দেওড়া উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর"
         elif status == 'absent':
-            msg = "প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে অনুপস্থিত ছিল। অনুগ্রহ করে যোগাযোগ করুন। - দেবরা উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর"
+            msg = "প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে অনুপস্থিত ছিল। অনুগ্রহ করে যোগাযোগ করুন। - দেওড়া উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর"
         else:
-            msg = "প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে [Status] ছিল। - দেবরা উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর"
+            msg = "প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে [Status] ছিল। - দেওড়া উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর"
 
     # Replace placeholders with Bangla formatting
     try:
@@ -4066,19 +4066,19 @@ def initialize_system():
                 # Create Bangla SMS templates
                 present_message = CustomMessage(
                     message_type='present',
-                    message_text='প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে উপস্থিত ছিল। - দেবরা উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর'
+                    message_text='প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে উপস্থিত ছিল। - দেওড়া উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর'
                 )
                 db.session.add(present_message)
                 
                 absent_message = CustomMessage(
                     message_type='absent',
-                    message_text='প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে অনুপস্থিত ছিল। অনুগ্রহ করে যোগাযোগ করুন। - দেবরা উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর'
+                    message_text='প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে অনুপস্থিত ছিল। অনুগ্রহ করে যোগাযোগ করুন। - দেওড়া উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর'
                 )
                 db.session.add(absent_message)
                 
                 late_message = CustomMessage(
                     message_type='late',
-                    message_text='প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে লেট ছিল। - দেবরা উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর'
+                    message_text='প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে লেট ছিল। - দেওড়া উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর'
                 )
                 db.session.add(late_message)
                 print("✅ Created Bangla SMS templates")
