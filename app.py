@@ -283,11 +283,11 @@ class SystemSettings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_name = db.Column(db.String(200), default='Dewra High School')
     school_logo = db.Column(db.String(500), default='https://i.supaimg.com/5838a1ce-b184-48bc-b370-5250b7e25a58.png')
-    school_address = db.Column(db.Text, default='ভাংগা, ফরিদপুর')
+    school_address = db.Column(db.Text, default='Bhanga, Faridpur')
     established_year = db.Column(db.Integer, default=1970)
     head_teacher_name = db.Column(db.String(100), default='Head Teacher')
     head_teacher_signature = db.Column(db.String(200))
-    motto = db.Column(db.Text, default='প্রত্যেকটা ছাত্র-ছাত্রী বাবা-মার কাছে সন্তান, শিক্ষকের কাছে আদর্শবান একজন ছাত্র, আর আমার কাছে তোমরা নিউক্লিয়ার শক্তি— চাইলে বদলে দিতে পারো সমাজ, রাষ্ট্র, পুরো পৃথিবী। — সাইফুল হাওলাদার')
+    motto = db.Column(db.Text, default='Every student is nuclear energy — capable of changing society, the state, the entire world. — Saiful Howlader')
     theme_color = db.Column(db.String(20), default='#00d4ff')
     secondary_color = db.Column(db.String(20), default='#ff00ea')
     accent_color = db.Column(db.String(20), default='#00ff88')
@@ -671,7 +671,7 @@ def send_sms_via_smsgate(phone_numbers, message, retry=1):
                     results.extend(retry_results["results"])
             else:
                 results.append({
-                    "phone": formatted_phone,
+                    "phone": phone,
                     "success": False,
                     "status": "NetworkError",
                     "error": str(e)
@@ -776,7 +776,7 @@ def generate_office_style_pdf(attendance_session):
         attendance_session.present_count = present_count
         attendance_session.absent_count = absent_count
 
-        # Generate enhanced HTML content
+        # Generate enhanced HTML content with professional design
         html_content = f"""
         <!DOCTYPE html>
         <html>
@@ -792,25 +792,29 @@ def generate_office_style_pdf(attendance_session):
                         content: "{school.school_name}";
                         font-size: 10pt;
                         color: #666;
+                        font-family: 'Arial', sans-serif;
                     }}
                     @top-right {{
                         content: "Page " counter(page) " of " counter(pages);
                         font-size: 10pt;
                         color: #666;
+                        font-family: 'Arial', sans-serif;
                     }}
                     @bottom-center {{
                         content: "Confidential - {school.school_name} Attendance System";
                         font-size: 8pt;
                         color: #999;
+                        font-family: 'Arial', sans-serif;
                     }}
                 }}
                 
                 body {{
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    font-family: 'Arial', 'Helvetica', sans-serif;
                     line-height: 1.6;
                     color: #333;
                     margin: 0;
                     padding: 0;
+                    background-color: #ffffff;
                 }}
                 
                 .watermark {{
@@ -819,78 +823,97 @@ def generate_office_style_pdf(attendance_session):
                     left: 50%;
                     transform: translate(-50%, -50%) rotate(-45deg);
                     font-size: 120px;
-                    opacity: 0.05;
+                    opacity: 0.03;
                     z-index: -1;
-                    color: #00d4ff;
+                    color: #0b3d91;
                     font-weight: bold;
                     white-space: nowrap;
-                    text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+                    font-family: 'Arial', sans-serif;
                 }}
                 
-                .header {{
+                .letterhead {{
                     text-align: center;
                     margin-bottom: 30px;
                     padding-bottom: 20px;
-                    border-bottom: 3px solid #00d4ff;
+                    border-bottom: 2px solid #0b3d91;
                     position: relative;
                 }}
                 
-                .school-logo {{
-                    max-width: 120px;
-                    height: auto;
-                    margin-bottom: 10px;
-                }}
-                
                 .school-name {{
-                    font-size: 28px;
+                    font-size: 32px;
                     font-weight: bold;
                     color: #0b3d91;
-                    margin: 5px 0;
+                    margin: 10px 0 5px 0;
                     text-transform: uppercase;
-                    letter-spacing: 1px;
+                    letter-spacing: 2px;
+                    font-family: 'Arial', sans-serif;
                 }}
                 
                 .school-address {{
                     font-size: 14px;
                     color: #666;
                     margin: 5px 0;
+                    font-weight: normal;
+                    font-family: 'Arial', sans-serif;
+                }}
+                
+                .established {{
+                    font-size: 12px;
+                    color: #888;
+                    margin: 5px 0;
+                    font-style: italic;
+                    font-family: 'Arial', sans-serif;
                 }}
                 
                 .report-title {{
                     text-align: center;
-                    font-size: 22px;
+                    font-size: 24px;
                     font-weight: bold;
-                    color: #ff00ea;
+                    color: #0b3d91;
                     margin: 25px 0;
-                    padding: 10px;
-                    background: linear-gradient(90deg, rgba(0,212,255,0.1) 0%, rgba(255,0,234,0.1) 100%);
-                    border-radius: 8px;
+                    padding: 15px;
+                    background: linear-gradient(90deg, rgba(11, 61, 145, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+                    border-radius: 10px;
+                    border-left: 5px solid #0b3d91;
+                    font-family: 'Arial', sans-serif;
                 }}
                 
-                .details-table {{
-                    width: 100%;
+                .document-info {{
+                    background-color: #f8f9fa;
+                    padding: 15px;
+                    border-radius: 8px;
                     margin: 20px 0;
-                    border-collapse: collapse;
-                    background: white;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                    border-radius: 8px;
-                    overflow: hidden;
+                    border: 1px solid #e0e0e0;
                 }}
                 
-                .details-table th, .details-table td {{
-                    padding: 12px 15px;
-                    text-align: left;
-                    border-bottom: 1px solid #e0e0e0;
+                .info-grid {{
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 15px;
+                    margin-bottom: 20px;
                 }}
                 
-                .details-table th {{
-                    background: linear-gradient(90deg, #00d4ff 0%, #0b3d91 100%);
-                    color: white;
+                .info-item {{
+                    margin-bottom: 10px;
+                }}
+                
+                .info-label {{
                     font-weight: bold;
+                    color: #0b3d91;
+                    display: block;
+                    font-size: 13px;
+                    margin-bottom: 3px;
+                    font-family: 'Arial', sans-serif;
                 }}
                 
-                .details-table tr:hover {{
-                    background-color: rgba(0,212,255,0.05);
+                .info-value {{
+                    color: #333;
+                    font-size: 14px;
+                    padding: 8px;
+                    background: white;
+                    border-radius: 4px;
+                    border: 1px solid #e0e0e0;
+                    font-family: 'Arial', sans-serif;
                 }}
                 
                 .attendance-table {{
@@ -898,26 +921,30 @@ def generate_office_style_pdf(attendance_session):
                     margin: 25px 0;
                     border-collapse: collapse;
                     background: white;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                    border-radius: 10px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    border-radius: 8px;
                     overflow: hidden;
                 }}
                 
                 .attendance-table thead {{
-                    background: linear-gradient(90deg, #0b3d91 0%, #ff00ea 100%);
+                    background: linear-gradient(90deg, #0b3d91 0%, #1e5ac9 100%);
                     color: white;
                 }}
                 
                 .attendance-table th {{
-                    padding: 15px;
+                    padding: 16px;
                     text-align: left;
                     font-weight: bold;
                     font-size: 14px;
+                    font-family: 'Arial', sans-serif;
+                    border-bottom: 2px solid #0b3d91;
                 }}
                 
                 .attendance-table td {{
-                    padding: 12px 15px;
+                    padding: 14px 16px;
                     border-bottom: 1px solid #e0e0e0;
+                    font-size: 13px;
+                    font-family: 'Arial', sans-serif;
                 }}
                 
                 .attendance-table tr:nth-child(even) {{
@@ -925,151 +952,203 @@ def generate_office_style_pdf(attendance_session):
                 }}
                 
                 .attendance-table tr:hover {{
-                    background-color: rgba(0,212,255,0.08);
+                    background-color: rgba(11, 61, 145, 0.05);
                 }}
                 
                 .status-present {{
-                    color: #00ff88;
+                    color: #28a745;
                     font-weight: bold;
-                    background-color: rgba(0,255,136,0.1);
-                    padding: 4px 12px;
+                    background-color: rgba(40, 167, 69, 0.1);
+                    padding: 6px 14px;
                     border-radius: 20px;
                     display: inline-block;
+                    font-size: 12px;
+                    text-transform: uppercase;
+                    font-family: 'Arial', sans-serif;
                 }}
                 
                 .status-absent {{
-                    color: #ff4757;
+                    color: #dc3545;
                     font-weight: bold;
-                    background-color: rgba(255,71,87,0.1);
-                    padding: 4px 12px;
+                    background-color: rgba(220, 53, 69, 0.1);
+                    padding: 6px 14px;
                     border-radius: 20px;
                     display: inline-block;
+                    font-size: 12px;
+                    text-transform: uppercase;
+                    font-family: 'Arial', sans-serif;
                 }}
                 
                 .status-late {{
-                    color: #ffa502;
+                    color: #ffc107;
                     font-weight: bold;
-                    background-color: rgba(255,165,2,0.1);
-                    padding: 4px 12px;
+                    background-color: rgba(255, 193, 7, 0.1);
+                    padding: 6px 14px;
                     border-radius: 20px;
                     display: inline-block;
+                    font-size: 12px;
+                    text-transform: uppercase;
+                    font-family: 'Arial', sans-serif;
                 }}
                 
-                .summary-box {{
-                    display: flex;
-                    justify-content: space-between;
-                    margin: 30px 0;
+                .summary-section {{
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
                     gap: 20px;
+                    margin: 30px 0;
                 }}
                 
                 .summary-card {{
-                    flex: 1;
                     padding: 20px;
                     border-radius: 10px;
                     text-align: center;
                     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                    transition: transform 0.3s ease;
                 }}
                 
-                .total-card {{ background: linear-gradient(135deg, #00d4ff 0%, #0b3d91 100%); color: white; }}
-                .present-card {{ background: linear-gradient(135deg, #00ff88 0%, #00b894 100%); color: white; }}
-                .absent-card {{ background: linear-gradient(135deg, #ff00ea 0%, #c44569 100%); color: white; }}
-                .rate-card {{ background: linear-gradient(135deg, #ffa502 0%, #e84118 100%); color: white; }}
+                .summary-card:hover {{
+                    transform: translateY(-5px);
+                }}
+                
+                .card-total {{ 
+                    background: linear-gradient(135deg, #0b3d91 0%, #1e5ac9 100%); 
+                    color: white; 
+                }}
+                
+                .card-present {{ 
+                    background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+                    color: white; 
+                }}
+                
+                .card-absent {{ 
+                    background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%); 
+                    color: white; 
+                }}
+                
+                .card-rate {{ 
+                    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); 
+                    color: white; 
+                }}
                 
                 .summary-number {{
-                    font-size: 32px;
+                    font-size: 36px;
                     font-weight: bold;
                     margin: 10px 0;
+                    font-family: 'Arial', sans-serif;
                 }}
                 
                 .summary-label {{
                     font-size: 14px;
                     opacity: 0.9;
+                    font-family: 'Arial', sans-serif;
                 }}
                 
-                .footer {{
+                .footer-section {{
                     margin-top: 50px;
                     padding-top: 20px;
-                    border-top: 2px solid #00d4ff;
+                    border-top: 2px solid #0b3d91;
                     display: flex;
                     justify-content: space-between;
-                    align-items: flex-end;
+                    align-items: flex-start;
                 }}
                 
-                .signature-box {{
+                .signature-block {{
                     text-align: center;
-                    margin-top: 40px;
+                    width: 300px;
                 }}
                 
                 .signature-line {{
-                    width: 300px;
+                    width: 250px;
                     border-top: 2px solid #333;
-                    margin: 40px auto 10px;
+                    margin: 60px auto 10px;
                 }}
                 
                 .signature-name {{
                     font-weight: bold;
-                    margin-top: 5px;
+                    margin-top: 10px;
+                    font-size: 16px;
+                    color: #0b3d91;
+                    font-family: 'Arial', sans-serif;
                 }}
                 
                 .signature-title {{
-                    font-size: 12px;
+                    font-size: 13px;
                     color: #666;
+                    margin-top: 5px;
+                    font-family: 'Arial', sans-serif;
                 }}
                 
-                .date-stamp {{
-                    text-align: right;
-                    color: #666;
-                    font-size: 12px;
-                }}
-                
-                .motto {{
-                    font-style: italic;
+                .footer-note {{
+                    font-size: 11px;
+                    color: #888;
                     text-align: center;
-                    margin: 30px 0;
-                    padding: 20px;
-                    background: linear-gradient(90deg, rgba(0,212,255,0.05) 0%, rgba(255,0,234,0.05) 100%);
-                    border-left: 4px solid #00d4ff;
-                    color: #555;
+                    margin-top: 40px;
+                    padding-top: 15px;
+                    border-top: 1px solid #e0e0e0;
+                    font-family: 'Arial', sans-serif;
+                }}
+                
+                .report-code {{
+                    background-color: #f8f9fa;
+                    padding: 10px;
+                    border-radius: 5px;
+                    font-family: 'Courier New', monospace;
+                    font-size: 12px;
+                    color: #666;
+                    margin-top: 10px;
+                }}
+                
+                .qr-code {{
+                    text-align: center;
+                    margin: 20px 0;
+                }}
+                
+                .qr-code img {{
+                    width: 100px;
+                    height: 100px;
                 }}
             </style>
         </head>
         <body>
             <div class="watermark">{school.school_name}</div>
             
-            <div class="header">
-                <img src="{school.school_logo}" class="school-logo" alt="School Logo">
-                <h1 class="school-name">{school.school_name}</h1>
+            <div class="letterhead">
+                <div class="school-name">{school.school_name}</div>
                 <div class="school-address">{school.school_address}</div>
-                <div class="school-address">Established: {school.established_year}</div>
+                <div class="established">Established: {school.established_year} | Location: Bhanga, Faridpur</div>
             </div>
             
             <div class="report-title">
-                DAILY ATTENDANCE REPORT
+                OFFICIAL ATTENDANCE REPORT
             </div>
             
-            <table class="details-table">
-                <tr>
-                    <th>Class & Section</th>
-                    <td>{attendance_session.class_name}-{attendance_session.section}</td>
-                    <th>Date</th>
-                    <td>{attendance_session.date.strftime('%d %B, %Y')}</td>
-                </tr>
-                <tr>
-                    <th>Subject</th>
-                    <td>{subject.name if subject else 'N/A'}</td>
-                    <th>Day</th>
-                    <td>{attendance_session.date.strftime('%A')}</td>
-                </tr>
-                <tr>
-                    <th>Teacher</th>
-                    <td>{teacher.username if teacher else 'N/A'}</td>
-                    <th>Report Generated</th>
-                    <td>{datetime.now(timezone.utc).strftime('%d/%m/%Y %I:%M %p')}</td>
-                </tr>
-            </table>
-            
-            <div class="motto">
-                "{school.motto}"
+            <div class="document-info">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Class & Section</span>
+                        <div class="info-value">{attendance_session.class_name}-{attendance_session.section}</div>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Subject</span>
+                        <div class="info-value">{subject.name if subject else 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Date</span>
+                        <div class="info-value">{attendance_session.date.strftime('%d %B, %Y')}</div>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Day</span>
+                        <div class="info-value">{attendance_session.date.strftime('%A')}</div>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Teacher</span>
+                        <div class="info-value">{teacher.username if teacher else 'N/A'}</div>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Report Generated</span>
+                        <div class="info-value">{datetime.now(timezone.utc).strftime('%d/%m/%Y %I:%M %p')} UTC</div>
+                    </div>
+                </div>
             </div>
             
             <table class="attendance-table">
@@ -1078,7 +1157,7 @@ def generate_office_style_pdf(attendance_session):
                         <th>SL</th>
                         <th>Roll No.</th>
                         <th>Student Name</th>
-                        <th>Father's Phone</th>
+                        <th>Parent's Phone</th>
                         <th>Status</th>
                         <th>Remarks</th>
                     </tr>
@@ -1097,42 +1176,45 @@ def generate_office_style_pdf(attendance_session):
                 </tbody>
             </table>
             
-            <div class="summary-box">
-                <div class="summary-card total-card">
+            <div class="summary-section">
+                <div class="summary-card card-total">
                     <div class="summary-number">{total_students}</div>
                     <div class="summary-label">TOTAL STUDENTS</div>
                 </div>
-                <div class="summary-card present-card">
+                <div class="summary-card card-present">
                     <div class="summary-number">{present_count}</div>
                     <div class="summary-label">PRESENT</div>
                 </div>
-                <div class="summary-card absent-card">
+                <div class="summary-card card-absent">
                     <div class="summary-number">{absent_count}</div>
                     <div class="summary-label">ABSENT</div>
                 </div>
-                <div class="summary-card rate-card">
+                <div class="summary-card card-rate">
                     <div class="summary-number">{attendance_rate:.1f}%</div>
                     <div class="summary-label">ATTENDANCE RATE</div>
                 </div>
             </div>
             
-            <div class="footer">
-                <div class="signature-box">
+            <div class="footer-section">
+                <div class="signature-block">
                     <div class="signature-line"></div>
                     <div class="signature-name">{school.head_teacher_name}</div>
                     <div class="signature-title">Head Teacher</div>
                     <div class="signature-title">{school.school_name}</div>
                 </div>
                 
-                <div class="signature-box">
+                <div class="signature-block">
                     <div class="signature-line"></div>
                     <div class="signature-name">{teacher.username if teacher else 'N/A'}</div>
-                    <div class="signature-title">Class Teacher</div>
+                    <div class="signature-title">Subject Teacher</div>
+                    <div class="signature-title">{subject.name if subject else 'N/A'}</div>
                 </div>
             </div>
             
-            <div class="date-stamp">
-                System Generated Report - {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}
+            <div class="footer-note">
+                <p>This is an official document generated by Dewra High School Smart Attendance System.</p>
+                <p>Report ID: ATT-{attendance_session.class_name}{attendance_session.section}-{attendance_session.date.strftime('%Y%m%d')}-{attendance_session.id}</p>
+                <p>Generated on: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')} | Document Version: 1.0</p>
             </div>
         </body>
         </html>
@@ -1145,7 +1227,7 @@ def generate_office_style_pdf(attendance_session):
 
         # Save PDF locally
         timestamp = int(datetime.now(timezone.utc).timestamp())
-        pdf_basename = f"Attendance_{attendance_session.class_name}_{attendance_session.section}_{attendance_session.date.strftime('%Y%m%d')}_{timestamp}.pdf"
+        pdf_basename = f"ATTENDANCE_{attendance_session.class_name}_{attendance_session.section}_{attendance_session.date.strftime('%Y%m%d')}_{timestamp}.pdf"
         pdf_dir = os.path.join(app.config['UPLOAD_FOLDER'], "pdfs")
         os.makedirs(pdf_dir, exist_ok=True)
         pdf_path = os.path.join(pdf_dir, pdf_basename)
@@ -1169,7 +1251,7 @@ def generate_office_style_pdf(attendance_session):
             attendance.pdf_url = f"/uploads/pdfs/{pdf_basename}"
 
         db.session.commit()
-        app.logger.info(f"PDF generated successfully: {pdf_basename}")
+        app.logger.info(f"Professional PDF generated successfully: {pdf_basename}")
 
         return buffer, f"/uploads/pdfs/{pdf_basename}"
 
@@ -1187,10 +1269,13 @@ def generate_office_style_pdf(attendance_session):
 def generate_simple_pdf_fallback(attendance_session):
     """Generate a simple PDF as fallback when enhanced PDF fails"""
     try:
-        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.pagesizes import A4, letter
         from reportlab.pdfgen import canvas
-        from reportlab.lib.units import inch
+        from reportlab.lib.units import inch, cm
         from reportlab.lib import colors
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 
         # Get data
         subject = db.session.get(Subject, attendance_session.subject_id)
@@ -1215,112 +1300,166 @@ def generate_simple_pdf_fallback(attendance_session):
 
         # Create PDF buffer
         buffer = io.BytesIO()
-        c = canvas.Canvas(buffer, pagesize=A4)
-        width, height = A4
+        doc = SimpleDocTemplate(buffer, pagesize=letter, 
+                               rightMargin=72, leftMargin=72,
+                               topMargin=72, bottomMargin=72)
+
+        # Styles
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=20,
+            textColor=colors.HexColor('#0b3d91'),
+            alignment=TA_CENTER,
+            spaceAfter=20
+        )
+
+        subtitle_style = ParagraphStyle(
+            'CustomSubtitle',
+            parent=styles['Normal'],
+            fontSize=12,
+            textColor=colors.HexColor('#666666'),
+            alignment=TA_CENTER,
+            spaceAfter=30
+        )
+
+        header_style = ParagraphStyle(
+            'CustomHeader',
+            parent=styles['Heading2'],
+            fontSize=14,
+            textColor=colors.HexColor('#0b3d91'),
+            spaceAfter=10
+        )
+
+        # Build story
+        story = []
 
         # School header
-        c.setFillColorRGB(0.04, 0.24, 0.57)  # Dark blue
-        c.rect(0, height-100, width, 100, fill=True, stroke=False)
-        
-        c.setFillColorRGB(1, 1, 1)  # White
-        c.setFont("Helvetica-Bold", 24)
-        c.drawString(100, height-60, school.school_name if school else "DEWRA HIGH SCHOOL")
-        
-        c.setFont("Helvetica", 12)
-        c.drawString(100, height-85, school.school_address if school else "ভাংগা, ফরিদপুর")
-        
-        # Title
-        c.setFillColorRGB(0, 0.83, 1)  # Cyan
-        c.setFont("Helvetica-Bold", 18)
-        c.drawString(100, height-150, "ATTENDANCE REPORT")
+        story.append(Paragraph(school.school_name if school else "DEWRA HIGH SCHOOL", title_style))
+        story.append(Paragraph(school.school_address if school else "Bhanga, Faridpur", subtitle_style))
+        story.append(Paragraph(f"Established: {school.established_year if school else '1970'}", subtitle_style))
+        story.append(Spacer(1, 20))
 
-        # Details
-        c.setFillColorRGB(0, 0, 0)  # Black
-        c.setFont("Helvetica", 10)
-        y = height - 180
+        # Report title
+        story.append(Paragraph("OFFICIAL ATTENDANCE REPORT", header_style))
+        story.append(Spacer(1, 20))
+
+        # Details table
+        details_data = [
+            ['Class & Section', f"{attendance_session.class_name}-{attendance_session.section}", 
+             'Date', attendance_session.date.strftime('%d/%m/%Y')],
+            ['Subject', subject.name if subject else 'N/A', 
+             'Day', attendance_session.date.strftime('%A')],
+            ['Teacher', teacher.username if teacher else 'N/A', 
+             'Report Time', datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')]
+        ]
+
+        details_table = Table(details_data, colWidths=[2*inch, 2*inch, 1.5*inch, 2*inch])
+        details_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f8f9fa')),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ]))
+
+        story.append(details_table)
+        story.append(Spacer(1, 20))
+
+        # Attendance table
+        attendance_data = [['SL', 'Roll No.', 'Student Name', 'Status', 'Phone']]
         
-        c.drawString(100, y, f"Class: {attendance_session.class_name}-{attendance_session.section}")
-        c.drawString(300, y, f"Date: {attendance_session.date.strftime('%d/%m/%Y')}")
-        y -= 20
-        c.drawString(100, y, f"Subject: {subject.name if subject else 'N/A'}")
-        c.drawString(300, y, f"Teacher: {teacher.username if teacher else 'N/A'}")
-        y -= 20
-        c.drawString(100, y, f"Day: {attendance_session.date.strftime('%A')}")
-
-        # Table header
-        y -= 40
-        c.setFillColorRGB(0.04, 0.24, 0.57)  # Dark blue
-        c.rect(50, y-20, 500, 20, fill=True, stroke=False)
-        
-        c.setFillColorRGB(1, 1, 1)  # White
-        c.setFont("Helvetica-Bold", 9)
-        c.drawString(55, y-15, "Roll No.")
-        c.drawString(100, y-15, "Name")
-        c.drawString(300, y-15, "Status")
-        c.drawString(400, y-15, "Phone")
-
-        # Student rows
-        c.setFillColorRGB(0, 0, 0)  # Black
-        c.setFont("Helvetica", 9)
-        y -= 30
-
-        for student in students:
-            if y < 100:  # New page if running out of space
-                c.showPage()
-                y = height - 100
-                c.setFont("Helvetica", 9)
-
+        for idx, student in enumerate(students, 1):
             attendance = next((a for a in attendance_records if a.student_id == student.id), None)
             status = attendance.status if attendance else "Absent"
-
-            c.drawString(55, y, str(student.roll_number))
-            c.drawString(100, y, student.name[:25])  # Limit name length
-            
-            # Color code status
-            if status.lower() == 'present':
-                c.setFillColorRGB(0, 1, 0.5)  # Green
-            elif status.lower() == 'absent':
-                c.setFillColorRGB(1, 0.28, 0.34)  # Red
-            else:
-                c.setFillColorRGB(1, 0.65, 0)  # Orange
-                
-            c.drawString(300, y, status.upper())
-            
-            c.setFillColorRGB(0, 0, 0)  # Reset to black
             phone = format_phone_e164(student.father_phone or student.mother_phone or "")
-            c.drawString(400, y, phone if phone else "N/A")
+            attendance_data.append([
+                str(idx),
+                student.roll_number,
+                student.name,
+                status.upper(),
+                phone if phone else "N/A"
+            ])
 
-            y -= 20
+        attendance_table = Table(attendance_data, repeatRows=1)
+        attendance_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0b3d91')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f8f9fa')])
+        ]))
+
+        story.append(attendance_table)
+        story.append(Spacer(1, 20))
 
         # Summary
-        y -= 30
-        c.setFont("Helvetica-Bold", 12)
         present_count = sum(1 for a in attendance_records if a.status == 'present')
         absent_count = len(students) - present_count
         attendance_rate = (present_count / len(students) * 100) if students else 0
         
-        c.drawString(100, y, f"Total Students: {len(students)}")
-        c.drawString(250, y, f"Present: {present_count}")
-        c.drawString(350, y, f"Absent: {absent_count}")
-        c.drawString(450, y, f"Rate: {attendance_rate:.1f}%")
+        summary_data = [
+            ['Total Students:', str(len(students))],
+            ['Present:', str(present_count)],
+            ['Absent:', str(absent_count)],
+            ['Attendance Rate:', f"{attendance_rate:.1f}%"]
+        ]
 
-        # Footer with signature
-        y = 80
-        c.setFont("Helvetica", 10)
-        c.drawString(100, y, "_________________________")
-        c.drawString(100, y-15, school.head_teacher_name if school else "Head Teacher")
-        c.drawString(100, y-30, "Head Teacher")
-        
-        c.drawString(350, y, "_________________________")
-        c.drawString(350, y-15, teacher.username if teacher else "Class Teacher")
-        c.drawString(350, y-30, "Class Teacher")
+        summary_table = Table(summary_data, colWidths=[2*inch, 1*inch])
+        summary_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+        ]))
+
+        story.append(summary_table)
+        story.append(Spacer(1, 30))
+
+        # Signatures
+        signature_data = [
+            ['_________________________', '_________________________'],
+            [school.head_teacher_name if school else 'Head Teacher', teacher.username if teacher else 'Class Teacher'],
+            ['Head Teacher', 'Class Teacher'],
+            [school.school_name if school else 'Dewra High School', '']
+        ]
+
+        signature_table = Table(signature_data, colWidths=[3*inch, 3*inch])
+        signature_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+        ]))
+
+        story.append(signature_table)
+        story.append(Spacer(1, 20))
 
         # Footer
-        c.setFont("Helvetica", 8)
-        c.drawString(100, 40, f"Report generated: {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')}")
-        c.drawString(100, 30, "Dewra High School Smart Attendance System")
+        footer = Paragraph(
+            f"Report generated on {datetime.now(timezone.utc).strftime('%d/%m/%Y %H:%M')} UTC | Dewra High School Smart Attendance System",
+            ParagraphStyle(
+                'Footer',
+                parent=styles['Normal'],
+                fontSize=8,
+                textColor=colors.grey,
+                alignment=TA_CENTER
+            )
+        )
+        story.append(footer)
 
-        c.save()
+        # Build PDF
+        doc.build(story)
         buffer.seek(0)
 
         # Save PDF locally
@@ -1345,7 +1484,7 @@ def generate_simple_pdf_fallback(attendance_session):
         app.logger.error(f"Simple PDF fallback error: {str(e)}")
         return None, None
 
-# ============= SMS FUNCTIONS WITH IMPROVED ERROR HANDLING =============
+# ============= SMS FUNCTIONS WITH BANGLA MESSAGES =============
 def send_sms_bulk_with_delay(sms_tasks):
     """Send multiple SMS with improved error handling and 10 second delay"""
     # Check if SMSGate is configured via environment variables
@@ -1534,7 +1673,7 @@ def process_attendance_sms_with_delay(attendance_session_id):
             app.logger.error(f"Error processing attendance SMS with delay: {str(e)}\n{traceback.format_exc()}")
 
 def get_sms_message(student, status, class_name, section, date=None):
-    """Get SMS message template with proper formatting"""
+    """Get SMS message template in Bangla with proper formatting"""
     if date is None:
         date = datetime.now(timezone.utc).date()
 
@@ -1548,25 +1687,56 @@ def get_sms_message(student, status, class_name, section, date=None):
         msg = custom_msg.message_text
     else:
         if status == 'present':
-            msg = "Dear Guardian, your child [Student Name], Roll [Roll], is present today in class [Class]. - Dewra High School"
+            msg = "প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে উপস্থিত ছিল। - দেবরা উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর"
         elif status == 'absent':
-            msg = "Dear Guardian, your child [Student Name], Roll [Roll], is absent today in class [Class]. - Dewra High School"
+            msg = "প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে অনুপস্থিত ছিল। অনুগ্রহ করে যোগাযোগ করুন। - দেবরা উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর"
         else:
-            msg = "Dear Guardian, your child [Student Name], Roll [Roll], is [Status] today in class [Class]. - Dewra High School"
+            msg = "প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে [Status] ছিল। - দেবরা উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর"
 
-    # Replace placeholders
+    # Replace placeholders with Bangla formatting
     try:
+        day_name_bangla = {
+            'Monday': 'সোমবার',
+            'Tuesday': 'মঙ্গলবার',
+            'Wednesday': 'বুধবার',
+            'Thursday': 'বৃহস্পতিবার',
+            'Friday': 'শুক্রবার',
+            'Saturday': 'শনিবার',
+            'Sunday': 'রবিবার'
+        }
+        
+        day_bangla = day_name_bangla.get(date.strftime('%A'), date.strftime('%A'))
+        
+        # Convert date to Bangla format (DD/MM/YYYY)
+        date_bangla = date.strftime('%d/%m/%Y')
+        
+        status_bangla = {
+            'present': 'উপস্থিত',
+            'absent': 'অনুপস্থিত',
+            'late': 'লেট'
+        }.get(status, status)
+        
         msg = msg.replace('[Student Name]', student.name)\
                  .replace('[Roll]', str(student.roll_number))\
                  .replace('[Class]', f"{class_name}-{section}")\
-                 .replace('[Date]', date.strftime('%d/%m/%Y'))\
-                 .replace('[Day]', date.strftime('%A'))\
-                 .replace('[Status]', status.capitalize())
+                 .replace('[Date]', date_bangla)\
+                 .replace('[Day]', day_bangla)\
+                 .replace('[Status]', status_bangla)
     except Exception as e:
         app.logger.error(f"Error formatting SMS message: {str(e)}")
-        msg = f"Attendance: {student.name} ({student.roll_number}) is {status} in class {class_name}-{section} on {date.strftime('%d/%m/%Y')}"
+        # Fallback to English if Bangla formatting fails
+        msg = f"Dear Guardian, {student.name} (Roll: {student.roll_number}) is {status} in class {class_name}-{section} on {date.strftime('%d/%m/%Y')}. - Dewra High School, Bhanga, Faridpur"
 
     return msg
+
+# ============= CUSTOM MESSAGE SENDING FUNCTION =============
+def send_custom_sms_bulk(phone_numbers, message):
+    """Send custom SMS messages to multiple numbers"""
+    sms_tasks = []
+    for phone in phone_numbers:
+        sms_tasks.append((phone, message, None))
+    
+    return send_sms_bulk_with_delay(sms_tasks)
 
 # ============= ROUTES =============
 @app.route('/')
@@ -3237,6 +3407,139 @@ def manage_quotes():
         flash(f'Error loading quotes: {str(e)}', 'danger')
         return redirect(url_for('dashboard'))
 
+# ============= NEW CUSTOM MESSAGE SENDING ROUTE =============
+@app.route('/admin/send-custom-message', methods=['GET', 'POST'])
+@login_required
+@super_admin_required
+def send_custom_message():
+    """Send custom SMS messages to students"""
+    if request.method == 'POST':
+        try:
+            recipient_type = request.form.get('recipient_type')
+            message = request.form.get('message', '').strip()
+            
+            if not message:
+                flash('Message is required', 'danger')
+                return redirect(url_for('send_custom_message'))
+            
+            phone_numbers = []
+            student_ids = []
+            
+            if recipient_type == 'all':
+                # Get all active students
+                students = Student.query.filter_by(is_active=True).all()
+                for student in students:
+                    if student.father_phone:
+                        phone_numbers.append(student.father_phone)
+                        student_ids.append(student.id)
+                    elif student.mother_phone:
+                        phone_numbers.append(student.mother_phone)
+                        student_ids.append(student.id)
+                        
+                flash(f'Preparing to send message to all {len(phone_numbers)} students', 'info')
+                
+            elif recipient_type == 'class':
+                class_name = request.form.get('class_name')
+                section = request.form.get('section')
+                
+                if not class_name or not section:
+                    flash('Class and section are required', 'danger')
+                    return redirect(url_for('send_custom_message'))
+                
+                students = Student.query.filter_by(
+                    class_name=class_name,
+                    section=section,
+                    is_active=True
+                ).all()
+                
+                for student in students:
+                    if student.father_phone:
+                        phone_numbers.append(student.father_phone)
+                        student_ids.append(student.id)
+                    elif student.mother_phone:
+                        phone_numbers.append(student.mother_phone)
+                        student_ids.append(student.id)
+                        
+                flash(f'Preparing to send message to {len(phone_numbers)} students in {class_name}-{section}', 'info')
+                
+            elif recipient_type == 'individual':
+                student_id = request.form.get('student_id')
+                student = db.session.get(Student, student_id)
+                
+                if student:
+                    if student.father_phone:
+                        phone_numbers.append(student.father_phone)
+                        student_ids.append(student.id)
+                    elif student.mother_phone:
+                        phone_numbers.append(student.mother_phone)
+                        student_ids.append(student.id)
+                    else:
+                        flash('Student has no phone number', 'warning')
+                        return redirect(url_for('send_custom_message'))
+                else:
+                    flash('Student not found', 'danger')
+                    return redirect(url_for('send_custom_message'))
+                    
+                flash(f'Preparing to send message to {student.name}', 'info')
+            
+            # Remove duplicates
+            phone_numbers = list(set(phone_numbers))
+            
+            if not phone_numbers:
+                flash('No valid phone numbers found', 'warning')
+                return redirect(url_for('send_custom_message'))
+            
+            # Send SMS in background thread
+            Thread(target=send_custom_sms_in_background, args=(phone_numbers, message)).start()
+            
+            flash(f'Message will be sent to {len(phone_numbers)} recipients with 10 seconds delay between each', 'success')
+            log_activity('send_custom_message', 'sms', f"Sent custom message to {len(phone_numbers)} recipients")
+            
+            return redirect(url_for('send_custom_message'))
+            
+        except Exception as e:
+            flash(f'Error sending message: {str(e)}', 'danger')
+            return redirect(url_for('send_custom_message'))
+    
+    # GET request - show form
+    try:
+        classes = Class.query.all()
+        students = Student.query.filter_by(is_active=True).order_by(Student.class_name, Student.section, Student.roll_number).all()
+        
+        return render_template('admin/send_custom_message.html',
+                             classes=classes,
+                             students=students)
+    except Exception as e:
+        flash(f'Error loading form: {str(e)}', 'danger')
+        return redirect(url_for('dashboard'))
+
+def send_custom_sms_in_background(phone_numbers, message):
+    """Send custom SMS in background"""
+    with app.app_context():
+        try:
+            results = send_custom_sms_bulk(phone_numbers, message)
+            app.logger.info(f"Custom SMS sending completed. Results: {results}")
+            
+            # Log the results
+            for phone in phone_numbers:
+                try:
+                    log = SMSLog(
+                        attendance_id=None,
+                        phone=phone,
+                        message=message[:500],
+                        status='sent',
+                        response='Custom message sent successfully',
+                        retry_count=0
+                    )
+                    db.session.add(log)
+                except Exception as e:
+                    app.logger.error(f"Error creating SMS log: {str(e)}")
+            
+            db.session.commit()
+            
+        except Exception as e:
+            app.logger.error(f"Error in custom SMS background task: {str(e)}")
+
 @app.route('/admin/reports')
 @login_required
 @super_admin_required
@@ -3753,14 +4056,38 @@ def initialize_system():
 
             if SystemSettings.query.count() == 0:
                 settings = SystemSettings()
+                settings.school_name = 'Dewra High School'
+                settings.school_address = 'Bhanga, Faridpur'
+                settings.established_year = 1970
                 db.session.add(settings)
-                print("✅ Created system settings")
+                print("✅ Created system settings with Bhanga, Faridpur location")
+
+            if CustomMessage.query.count() == 0:
+                # Create Bangla SMS templates
+                present_message = CustomMessage(
+                    message_type='present',
+                    message_text='প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে উপস্থিত ছিল। - দেবরা উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর'
+                )
+                db.session.add(present_message)
+                
+                absent_message = CustomMessage(
+                    message_type='absent',
+                    message_text='প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে অনুপস্থিত ছিল। অনুগ্রহ করে যোগাযোগ করুন। - দেবরা উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর'
+                )
+                db.session.add(absent_message)
+                
+                late_message = CustomMessage(
+                    message_type='late',
+                    message_text='প্রিয় অভিভাবক, আপনার সন্তান [Student Name], রোল [Roll], আজ [Date] তারিখে [Class] শ্রেণিতে লেট ছিল। - দেবরা উচ্চ বিদ্যালয়, ভাংগা, ফরিদপুর'
+                )
+                db.session.add(late_message)
+                print("✅ Created Bangla SMS templates")
 
             if DailyQuote.query.count() == 0:
                 quotes = [
                     {
-                        'quote': 'প্রত্যেকটা ছাত্র-ছাত্রী বাবা-মার কাছে সন্তান, শিক্ষকের কাছে আদর্শবান একজন ছাত্র, আর আমার কাছে তোমরা নিউক্লিয়ার শক্তি— চাইলে বদলে দিতে পারো সমাজ, রাষ্ট্র, পুরো পৃথিবী।',
-                        'author': 'সাইফুল হাওলাদার',
+                        'quote': 'Every student is nuclear energy — capable of changing society, the state, the entire world.',
+                        'author': 'Saiful Howlader',
                         'category': 'motivation'
                     },
                     {
@@ -3779,7 +4106,7 @@ def initialize_system():
                         'category': 'teacher'
                     },
                     {
-                        'quote': 'মেধা আর পরিশ্রমের কোনো বিকল্প নেই। পড়ালেখায় সফল হতে হলে এই দুইয়ের সমন্বয় করতে হবে।',
+                        'quote': 'Knowledge and hard work have no alternatives. To succeed in studies, you must combine these two.',
                         'author': '',
                         'category': 'success'
                     },
@@ -3789,8 +4116,8 @@ def initialize_system():
                         'category': 'teacher'
                     },
                     {
-                        'quote': 'যে নিজেকে জানতে চায়, সে বিশ্বকে জানতে পারবে।',
-                        'author': 'আলবার্ট আইনস্টাইন',
+                        'quote': 'He who knows himself knows the world.',
+                        'author': 'Albert Einstein',
                         'category': 'motivation'
                     }
                 ]
@@ -3890,6 +4217,7 @@ if __name__ == '__main__':
     print(f"🔐 Secret Key: {'✅ Set' if len(app.config['SECRET_KEY']) >= 32 else '⚠️ Weak'}")
     print(f"📁 Upload Folder: {app.config['UPLOAD_FOLDER']}")
     print(f"📱 SMS Service: {'✅ SMSGate' if SMSGATE_USERNAME and SMSGATE_PASSWORD else '⚠️ Not configured'}")
+    print(f"📍 Location: Bhanga, Faridpur (Est. 1970)")
     print("=" * 60)
     print("🌐 Starting server on http://localhost:5000")
     print("👑 Super Admin: admin@dewra.edu.bd")
@@ -3898,7 +4226,7 @@ if __name__ == '__main__':
     print("🔑 Password: Teacher@2025")
     print("=" * 60)
     print("💡 Remember: Every student is nuclear energy!")
-    print("✨ Made with ❤️ for Dewra High School")
+    print("✨ Made with ❤️ for Dewra High School, Bhanga, Faridpur")
     print("=" * 60)
 
     try:
