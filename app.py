@@ -2316,10 +2316,10 @@ def get_student_by_id(student_id):
             student = db.session.get(Student, student_id)
             if not student:
                 return jsonify({'success': False, 'error': 'Student not found'}), 404
-            
+
             if not current_user.is_assigned_to(student.class_name, student.section):
                 return jsonify({'success': False, 'error': 'You are not assigned to this student\'s class'}), 403
-        
+
         # Super admin can access any student
         student = db.session.get(Student, student_id)
         if not student:
@@ -2910,7 +2910,7 @@ def assign_teacher_form(teacher_id):
 @login_required
 @super_admin_required
 def manage_students():
-    """Manage students - add, edit, deactivate"""
+    """Manage students - add, edit, deactivate - FIXED VERSION"""
 
     if request.method == 'POST':
         action = request.form.get('action')
@@ -2971,6 +2971,15 @@ def manage_students():
                 student = db.session.get(Student, student_id)
 
                 if student:
+                    # Store old values for logging
+                    old_values = {
+                        'roll_number': student.roll_number,
+                        'name': student.name,
+                        'class_name': student.class_name,
+                        'section': student.section
+                    }
+                    
+                    # Get form data
                     student.roll_number = request.form.get('roll_number', student.roll_number)
                     student.name = request.form.get('name', student.name)
                     student.father_name = request.form.get('father_name', student.father_name)
@@ -2987,19 +2996,48 @@ def manage_students():
                             student.date_of_birth = datetime.strptime(dob, '%Y-%m-%d').date()
                         except:
                             pass
+                    elif request.form.get('date_of_birth') == '':
+                        # If empty string, set to None
+                        student.date_of_birth = None
 
+                    # Handle photo upload
                     if 'photo' in request.files:
                         file = request.files['photo']
                         if file and file.filename != '' and allowed_file(file.filename):
+                            # Delete old photo if exists
+                            if student.photo and os.path.exists(os.path.join(app.static_folder, student.photo)):
+                                try:
+                                    os.remove(os.path.join(app.static_folder, student.photo))
+                                except:
+                                    pass
+                            
                             filename = secure_filename(f"student_{student.id}_{int(datetime.now(timezone.utc).timestamp())}.jpg")
                             filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'students', filename)
                             file.save(filepath)
 
                             student.photo = f'uploads/students/{filename}'
 
-                    db.session.commit()
-                    flash('Student updated successfully', 'success')
-                    log_activity('update_student', 'students', f"Updated student: {student.name}")
+                    # Handle is_active checkbox
+                    student.is_active = 'is_active' in request.form
+
+                    # Check for duplicate roll number in same class and section (excluding current student)
+                    duplicate = Student.query.filter(
+                        Student.class_name == student.class_name,
+                        Student.section == student.section,
+                        Student.roll_number == student.roll_number,
+                        Student.id != student.id
+                    ).first()
+                    
+                    if duplicate:
+                        flash(f'Student with roll number {student.roll_number} already exists in {student.class_name}-{student.section}', 'danger')
+                        db.session.rollback()
+                    else:
+                        db.session.commit()
+                        flash('Student updated successfully', 'success')
+                        log_activity('update_student', 'students', 
+                                   f"Updated student: {old_values['name']} (ID: {student_id}) from {old_values['class_name']}-{old_values['section']} to {student.class_name}-{student.section}")
+                else:
+                    flash('Student not found', 'danger')
 
             elif action == 'toggle_status':
                 student_id = request.form.get('student_id')
@@ -3017,10 +3055,12 @@ def manage_students():
             flash(f'Error: {str(e)}', 'danger')
             return redirect(url_for('manage_students'))
 
+    # GET request - show student list with edit form
     try:
         class_filter = request.args.get('class', 'all')
         section_filter = request.args.get('section', 'all')
         status_filter = request.args.get('status', 'active')
+        edit_id = request.args.get('edit', type=int)
 
         query = Student.query
 
@@ -3055,13 +3095,22 @@ def manage_students():
                 except:
                     sections = []
 
+        # Get student to edit if edit_id is provided
+        edit_student = None
+        if edit_id:
+            edit_student = db.session.get(Student, edit_id)
+            if not edit_student:
+                flash('Student not found', 'danger')
+
         return render_template('admin/manage_students.html',
                              students=students,
                              classes=classes,
                              sections=sections,
                              class_filter=class_filter,
                              section_filter=section_filter,
-                             status_filter=status_filter)
+                             status_filter=status_filter,
+                             edit_student=edit_student,
+                             edit_id=edit_id)
     except Exception as e:
         flash(f'Error loading students: {str(e)}', 'danger')
         return redirect(url_for('dashboard'))
