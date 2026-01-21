@@ -9,13 +9,27 @@
         <p>Add, edit, or deactivate student records</p>
     </div>
 
+    <!-- Display flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-{{ category }}">
+                        <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% elif category == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
     <!-- Filters and Controls -->
     <div class="filter-bar">
         <form method="get" class="filter-form">
             <div class="filter-grid">
                 <div class="filter-item">
                     <label><i class="fas fa-graduation-cap"></i> Class</label>
-                    <select name="class" class="filter-select" onchange="this.form.submit()">
+                    <select name="class" class="filter-select" id="classFilter" onchange="this.form.submit()">
                         <option value="all" {% if class_filter == 'all' %}selected{% endif %}>All Classes</option>
                         {% for class in classes %}
                         <option value="{{ class.name }}" {% if class_filter == class.name %}selected{% endif %}>
@@ -24,10 +38,10 @@
                         {% endfor %}
                     </select>
                 </div>
-                
+
                 <div class="filter-item">
                     <label><i class="fas fa-layer-group"></i> Section</label>
-                    <select name="section" class="filter-select" onchange="this.form.submit()">
+                    <select name="section" class="filter-select" id="sectionFilter" onchange="this.form.submit()">
                         <option value="all" {% if section_filter == 'all' %}selected{% endif %}>All Sections</option>
                         {% for section in sections %}
                         <option value="{{ section }}" {% if section_filter == section %}selected{% endif %}>
@@ -36,7 +50,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                
+
                 <div class="filter-item">
                     <label><i class="fas fa-circle"></i> Status</label>
                     <select name="status" class="filter-select" onchange="this.form.submit()">
@@ -45,7 +59,7 @@
                         <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
                     </select>
                 </div>
-                
+
                 <div class="filter-item">
                     <label>&nbsp;</label>
                     <button type="button" class="btn-primary" onclick="showAddStudentModal()">
@@ -62,7 +76,7 @@
             <h3><i class="fas fa-list"></i> Student List</h3>
             <span class="badge">{{ students.total }} Students</span>
         </div>
-        
+
         <div class="card-body">
             <div class="table-responsive">
                 <table class="data-table">
@@ -115,14 +129,14 @@
                             </td>
                             <td>
                                 <div class="action-buttons">
-                                    <button class="btn-icon btn-info" onclick="viewStudent({{ student.id }})" 
-                                            title="View Details">
+                                    <a href="{{ url_for('admin_view_student', student_id=student.id) }}" 
+                                       class="btn-icon btn-info" title="View Details">
                                         <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button class="btn-icon btn-warning" onclick="editStudent({{ student.id }})"
-                                            title="Edit">
+                                    </a>
+                                    <a href="{{ url_for('manage_students', class=class_filter, section=section_filter, status=status_filter, edit=student.id, page=request.args.get('page', 1)) }}"
+                                       class="btn-icon btn-warning" title="Edit">
                                         <i class="fas fa-edit"></i>
-                                    </button>
+                                    </a>
                                     {% if student.is_active %}
                                     <button class="btn-icon btn-danger" 
                                             onclick="toggleStudentStatus({{ student.id }}, 'deactivate')"
@@ -140,7 +154,7 @@
                             </td>
                         </tr>
                         {% endfor %}
-                        
+
                         {% if students.total == 0 %}
                         <tr>
                             <td colspan="9" class="empty-state">
@@ -153,23 +167,23 @@
                     </tbody>
                 </table>
             </div>
-            
+
             <!-- Pagination -->
             {% if students.pages > 1 %}
             <div class="pagination">
                 {% if students.has_prev %}
-                <a href="{{ url_for('manage_students', page=students.prev_num, class=class_filter, section=section_filter, status=status_filter) }}"
+                <a href="{{ url_for('manage_students', page=students.prev_num, class=class_filter, section=section_filter, status=status_filter, edit=edit_id) }}"
                    class="page-btn">
                     <i class="fas fa-chevron-left"></i> Previous
                 </a>
                 {% endif %}
-                
+
                 <span class="page-info">
                     Page {{ students.page }} of {{ students.pages }}
                 </span>
-                
+
                 {% if students.has_next %}
-                <a href="{{ url_for('manage_students', page=students.next_num, class=class_filter, section=section_filter, status=status_filter) }}"
+                <a href="{{ url_for('manage_students', page=students.next_num, class=class_filter, section=section_filter, status=status_filter, edit=edit_id) }}"
                    class="page-btn">
                     Next <i class="fas fa-chevron-right"></i>
                 </a>
@@ -180,106 +194,158 @@
     </div>
 </div>
 
-<!-- Add Student Modal -->
-<div class="modal-overlay" id="addStudentModal">
+<!-- Add/Edit Student Modal -->
+<div class="modal-overlay {% if edit_student %}active{% endif %}" id="addStudentModal">
     <div class="modal modal-lg">
         <div class="modal-header">
-            <h3><i class="fas fa-user-plus"></i> Add New Student</h3>
+            <h3><i class="fas {% if edit_student %}fa-user-edit{% else %}fa-user-plus{% endif %}"></i> 
+                {% if edit_student %}Edit Student{% else %}Add New Student{% endif %}
+            </h3>
             <button class="modal-close" onclick="closeModal('addStudentModal')">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        
+
         <form method="POST" action="{{ url_for('manage_students') }}" enctype="multipart/form-data" id="studentForm">
-            <input type="hidden" name="action" value="add">
-            <input type="hidden" name="student_id" id="studentId" value="">
-            
+            <input type="hidden" name="action" value="{% if edit_student %}edit{% else %}add{% endif %}">
+            {% if edit_student %}
+            <input type="hidden" name="student_id" value="{{ edit_student.id }}">
+            {% endif %}
+
             <div class="modal-body">
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="roll_number"><i class="fas fa-hashtag"></i> Roll Number *</label>
                         <input type="text" id="roll_number" name="roll_number" required 
-                               class="form-input" placeholder="e.g., 101">
+                               class="form-input" placeholder="e.g., 101"
+                               value="{{ edit_student.roll_number if edit_student else '' }}">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="name"><i class="fas fa-user"></i> Student Name *</label>
                         <input type="text" id="name" name="name" required 
-                               class="form-input" placeholder="Full name">
+                               class="form-input" placeholder="Full name"
+                               value="{{ edit_student.name if edit_student else '' }}">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="class_name"><i class="fas fa-graduation-cap"></i> Class *</label>
-                        <select id="class_name" name="class_name" required class="form-select">
+                        <select id="class_name" name="class_name" required class="form-select" onchange="updateSections(this.value)">
                             <option value="">Select Class</option>
                             {% for class in classes %}
-                            <option value="{{ class.name }}">Class {{ class.name }}</option>
+                            <option value="{{ class.name }}" 
+                                    {% if edit_student and edit_student.class_name == class.name %}selected{% endif %}
+                                    data-sections="{{ class.sections }}">
+                                Class {{ class.name }}
+                            </option>
                             {% endfor %}
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="section"><i class="fas fa-layer-group"></i> Section *</label>
                         <select id="section" name="section" required class="form-select">
                             <option value="">Select Section</option>
-                            <option value="A">A</option>
-                            <option value="B">B</option>
-                            <option value="C">C</option>
-                            <option value="D">D</option>
+                            {% if edit_student %}
+                                {# Get sections for the student's current class #}
+                                {% set current_class = classes|selectattr('name', 'equalto', edit_student.class_name)|first %}
+                                {% if current_class %}
+                                    {% set class_sections = current_class.sections|from_json %}
+                                    {% for section in class_sections %}
+                                    <option value="{{ section }}" 
+                                            {% if edit_student.section == section %}selected{% endif %}>
+                                        Section {{ section }}
+                                    </option>
+                                    {% endfor %}
+                                {% else %}
+                                    {# Fallback if class not found #}
+                                    <option value="A" {% if edit_student.section == 'A' %}selected{% endif %}>Section A</option>
+                                    <option value="B" {% if edit_student.section == 'B' %}selected{% endif %}>Section B</option>
+                                    <option value="C" {% if edit_student.section == 'C' %}selected{% endif %}>Section C</option>
+                                    <option value="D" {% if edit_student.section == 'D' %}selected{% endif %}>Section D</option>
+                                {% endif %}
+                            {% else %}
+                                <option value="A">Section A</option>
+                                <option value="B">Section B</option>
+                                <option value="C">Section C</option>
+                                <option value="D">Section D</option>
+                            {% endif %}
                         </select>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="father_name"><i class="fas fa-male"></i> Father's Name</label>
                         <input type="text" id="father_name" name="father_name" 
-                               class="form-input" placeholder="Father's name">
+                               class="form-input" placeholder="Father's name"
+                               value="{{ edit_student.father_name if edit_student else '' }}">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="father_phone"><i class="fas fa-phone"></i> Father's Phone *</label>
                         <input type="tel" id="father_phone" name="father_phone" required 
-                               class="form-input" placeholder="01XXXXXXXXX">
+                               class="form-input" placeholder="01XXXXXXXXX"
+                               value="{{ edit_student.father_phone if edit_student else '' }}">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="mother_name"><i class="fas fa-female"></i> Mother's Name</label>
                         <input type="text" id="mother_name" name="mother_name" 
-                               class="form-input" placeholder="Mother's name">
+                               class="form-input" placeholder="Mother's name"
+                               value="{{ edit_student.mother_name if edit_student else '' }}">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="mother_phone"><i class="fas fa-phone-alt"></i> Mother's Phone</label>
                         <input type="tel" id="mother_phone" name="mother_phone" 
-                               class="form-input" placeholder="01XXXXXXXXX">
+                               class="form-input" placeholder="01XXXXXXXXX"
+                               value="{{ edit_student.mother_phone if edit_student else '' }}">
                     </div>
-                    
+
                     <div class="form-group full-width">
                         <label for="address"><i class="fas fa-map-marker-alt"></i> Address</label>
                         <textarea id="address" name="address" class="form-textarea" 
-                                  rows="2" placeholder="Full address"></textarea>
+                                  rows="2" placeholder="Full address">{{ edit_student.address if edit_student else '' }}</textarea>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="date_of_birth"><i class="fas fa-birthday-cake"></i> Date of Birth</label>
                         <input type="date" id="date_of_birth" name="date_of_birth" 
-                               class="form-input">
+                               class="form-input"
+                               value="{{ edit_student.date_of_birth.strftime('%Y-%m-%d') if edit_student and edit_student.date_of_birth else '' }}">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="photo"><i class="fas fa-camera"></i> Student Photo</label>
                         <input type="file" id="photo" name="photo" 
                                class="form-input" accept="image/*">
                         <small class="form-help">Max 2MB, JPG/PNG format</small>
+                        {% if edit_student and edit_student.photo %}
+                        <div class="current-photo">
+                            <small>Current: <a href="{{ url_for('static', filename=edit_student.photo) }}" target="_blank">View Photo</a></small>
+                        </div>
+                        {% endif %}
                     </div>
+
+                    {% if edit_student %}
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" id="is_active" name="is_active" class="form-checkbox"
+                                   {% if edit_student.is_active %}checked{% endif %}>
+                            <label for="is_active" class="form-check-label">
+                                <i class="fas fa-user-check"></i> Active Student
+                            </label>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
-            
+
             <div class="modal-footer">
                 <button type="button" class="btn-secondary" onclick="closeModal('addStudentModal')">
                     Cancel
                 </button>
                 <button type="submit" class="btn-primary">
-                    <i class="fas fa-save"></i> Save Student
+                    <i class="fas fa-save"></i> {% if edit_student %}Update Student{% else %}Save Student{% endif %}
                 </button>
             </div>
         </form>
@@ -311,6 +377,51 @@
 .page-header p {
     color: var(--gray);
     font-size: 15px;
+}
+
+/* Flash messages */
+.flash-messages {
+    margin-bottom: 20px;
+}
+
+.flash-success, .flash-danger, .flash-warning, .flash-info {
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 4px solid;
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.flash-success {
+    background: rgba(0, 204, 102, 0.15);
+    color: var(--success);
+    border-left-color: var(--success);
+}
+
+.flash-danger {
+    background: rgba(255, 51, 102, 0.15);
+    color: var(--danger);
+    border-left-color: var(--danger);
+}
+
+.flash-warning {
+    background: rgba(255, 170, 0, 0.15);
+    color: var(--warning);
+    border-left-color: var(--warning);
+}
+
+.flash-info {
+    background: rgba(0, 212, 255, 0.15);
+    color: var(--primary);
+    border-left-color: var(--primary);
 }
 
 .filter-bar {
@@ -436,6 +547,7 @@
     cursor: pointer;
     transition: all 0.3s;
     font-size: 14px;
+    text-decoration: none;
 }
 
 .btn-icon:hover {
@@ -661,6 +773,36 @@
     font-size: 12px;
 }
 
+.current-photo {
+    margin-top: 8px;
+}
+
+.current-photo a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.current-photo a:hover {
+    text-decoration: underline;
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-checkbox {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+.form-check-label {
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
 /* Button Styles */
 .btn-primary, .btn-secondary {
     padding: 12px 24px;
@@ -700,26 +842,26 @@
     .filter-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .action-buttons {
         flex-direction: column;
         gap: 5px;
     }
-    
+
     .btn-icon {
         width: 32px;
         height: 32px;
     }
-    
+
     .modal {
         width: 95%;
         margin: 10px;
     }
-    
+
     .form-grid {
         grid-template-columns: 1fr;
     }
-    
+
     .pagination {
         flex-direction: column;
         gap: 10px;
@@ -733,47 +875,70 @@
 // Modal Functions
 function showAddStudentModal() {
     document.getElementById('addStudentModal').classList.add('active');
+    // Reset form for adding
     document.getElementById('studentForm').reset();
-    document.getElementById('studentId').value = '';
-    document.getElementById('studentForm').action = "{{ url_for('manage_students') }}";
     document.querySelector('input[name="action"]').value = 'add';
+    if (document.querySelector('input[name="student_id"]')) {
+        document.querySelector('input[name="student_id"]').value = '';
+    }
+    
+    // Reset date field to empty
+    document.getElementById('date_of_birth').value = '';
+    
+    // Reset section dropdown to default
+    const sectionSelect = document.getElementById('section');
+    sectionSelect.innerHTML = `
+        <option value="">Select Section</option>
+        <option value="A">Section A</option>
+        <option value="B">Section B</option>
+        <option value="C">Section C</option>
+        <option value="D">Section D</option>
+    `;
 }
 
 function closeModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
+    // Remove edit parameter from URL
+    if (window.location.search.includes('edit=')) {
+        const url = new URL(window.location);
+        url.searchParams.delete('edit');
+        window.history.replaceState({}, '', url);
+    }
 }
 
-function editStudent(studentId) {
-    // Fetch student data and populate form
-    fetch(`/api/student/${studentId}`)
-        .then(response => response.json())
-        .then(student => {
-            // Populate form fields
-            document.getElementById('studentId').value = student.id;
-            document.getElementById('roll_number').value = student.roll_number;
-            document.getElementById('name').value = student.name;
-            document.getElementById('class_name').value = student.class_name;
-            document.getElementById('section').value = student.section;
-            document.getElementById('father_name').value = student.father_name || '';
-            document.getElementById('father_phone').value = student.father_phone;
-            document.getElementById('mother_name').value = student.mother_name || '';
-            document.getElementById('mother_phone').value = student.mother_phone || '';
-            document.getElementById('address').value = student.address || '';
+function updateSections(className) {
+    const sectionSelect = document.getElementById('section');
+    const classOption = document.querySelector(`#class_name option[value="${className}"]`);
+    
+    if (classOption && classOption.dataset.sections) {
+        try {
+            const sections = JSON.parse(classOption.dataset.sections);
+            sectionSelect.innerHTML = '<option value="">Select Section</option>';
             
-            if (student.date_of_birth) {
-                document.getElementById('date_of_birth').value = student.date_of_birth;
-            }
-            
-            // Change form action
-            document.getElementById('studentForm').action = "{{ url_for('manage_students') }}";
-            document.querySelector('input[name="action"]').value = 'edit';
-            
-            // Show modal
-            document.getElementById('addStudentModal').classList.add('active');
-        })
-        .catch(error => {
-            alert('Error loading student data: ' + error.message);
-        });
+            sections.forEach(section => {
+                const option = document.createElement('option');
+                option.value = section;
+                option.textContent = `Section ${section}`;
+                sectionSelect.appendChild(option);
+            });
+        } catch (e) {
+            console.error('Error parsing sections:', e);
+            setDefaultSections();
+        }
+    } else {
+        setDefaultSections();
+    }
+}
+
+function setDefaultSections() {
+    const sectionSelect = document.getElementById('section');
+    sectionSelect.innerHTML = `
+        <option value="">Select Section</option>
+        <option value="A">Section A</option>
+        <option value="B">Section B</option>
+        <option value="C">Section C</option>
+        <option value="D">Section D</option>
+    `;
 }
 
 function toggleStudentStatus(studentId, action) {
@@ -781,50 +946,124 @@ function toggleStudentStatus(studentId, action) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = "{{ url_for('manage_students') }}";
-        
+
         const actionInput = document.createElement('input');
         actionInput.type = 'hidden';
         actionInput.name = 'action';
         actionInput.value = 'toggle_status';
-        
+
         const studentIdInput = document.createElement('input');
         studentIdInput.type = 'hidden';
         studentIdInput.name = 'student_id';
         studentIdInput.value = studentId;
-        
+
+        // Add filter parameters to maintain current view
+        const classFilter = document.querySelector('#classFilter') ? document.querySelector('#classFilter').value : 'all';
+        const sectionFilter = document.querySelector('#sectionFilter') ? document.querySelector('#sectionFilter').value : 'all';
+        const statusFilter = document.querySelector('[name="status"]') ? document.querySelector('[name="status"]').value : 'active';
+        const page = "{{ request.args.get('page', 1) }}";
+
+        const classInput = document.createElement('input');
+        classInput.type = 'hidden';
+        classInput.name = 'class';
+        classInput.value = classFilter;
+
+        const sectionInput = document.createElement('input');
+        sectionInput.type = 'hidden';
+        sectionInput.name = 'section';
+        sectionInput.value = sectionFilter;
+
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'status';
+        statusInput.value = statusFilter;
+
+        const pageInput = document.createElement('input');
+        pageInput.type = 'hidden';
+        pageInput.name = 'page';
+        pageInput.value = page;
+
         form.appendChild(actionInput);
         form.appendChild(studentIdInput);
+        form.appendChild(classInput);
+        form.appendChild(sectionInput);
+        form.appendChild(statusInput);
+        form.appendChild(pageInput);
         document.body.appendChild(form);
         form.submit();
     }
-}
-
-function viewStudent(studentId) {
-    window.location.href = `/admin/student/${studentId}`;
 }
 
 // Form validation
 document.getElementById('studentForm').addEventListener('submit', function(e) {
     const phone = document.getElementById('father_phone').value;
     const phoneRegex = /^(?:\+88|01)?\d{9,10}$/;
-    
+
     if (!phoneRegex.test(phone)) {
-        alert('Please enter a valid Bangladeshi phone number');
+        alert('Please enter a valid Bangladeshi phone number (e.g., 01712345678)');
         e.preventDefault();
         return false;
     }
-    
+
+    const rollNumber = document.getElementById('roll_number').value;
+    if (!rollNumber || rollNumber.trim() === '') {
+        alert('Roll number is required');
+        e.preventDefault();
+        return false;
+    }
+
+    const name = document.getElementById('name').value;
+    if (!name || name.trim() === '') {
+        alert('Student name is required');
+        e.preventDefault();
+        return false;
+    }
+
+    const className = document.getElementById('class_name').value;
+    if (!className) {
+        alert('Class is required');
+        e.preventDefault();
+        return false;
+    }
+
+    const section = document.getElementById('section').value;
+    if (!section) {
+        alert('Section is required');
+        e.preventDefault();
+        return false;
+    }
+
+    // Show loading indicator
     showLoader();
 });
 
-// Initialize date picker
+// Initialize date picker max date (today)
 document.getElementById('date_of_birth').max = new Date().toISOString().split('T')[0];
 
 // Auto-submit filter changes
 document.querySelectorAll('.filter-select').forEach(select => {
     select.addEventListener('change', function() {
         showLoader();
+        this.form.submit();
     });
+});
+
+// Show modal on page load if editing
+document.addEventListener('DOMContentLoaded', function() {
+    {% if edit_student %}
+    // Check if modal is already active
+    if (!document.getElementById('addStudentModal').classList.contains('active')) {
+        document.getElementById('addStudentModal').classList.add('active');
+    }
+    {% endif %}
+    
+    // Initialize sections for edit mode
+    {% if edit_student %}
+    const className = "{{ edit_student.class_name }}";
+    if (className) {
+        updateSections(className);
+    }
+    {% endif %}
 });
 </script>
 {% endblock %}
